@@ -1,0 +1,11 @@
+[root]
+name = "sample-game"
+version = "0.1.0"
+dependencies = [
+ "midgar 0.1.0",
+]
+
+[[package]]
+name = "midgar"
+version = "0.1.0"
+

@@ -1,4 +1,9 @@
+extern crate glium;
+extern crate glutin;
+
 use std::time::Instant;
+
+use glium::DisplayBuild;
 
 pub trait App {
     fn create(midgar: &Midgar) -> Self;
@@ -25,7 +30,12 @@ pub struct MidgarApp<T: App> {
 
 impl<T: App> MidgarApp<T> {
     pub fn new(config: MidgarAppConfig) -> Self {
-        let midgar = Midgar::new();
+        // TODO: Set window options from app config
+        let display = glutin::WindowBuilder::new()
+            .build_glium()
+            .unwrap();
+
+        let midgar = Midgar::new(display);
         let app = T::create(&midgar);
 
         MidgarApp {
@@ -40,9 +50,22 @@ impl<T: App> MidgarApp<T> {
         // Game loop
         while running {
             // TODO: Gather events
-            // TODO: Maybe resize
+            for event in self.midgar.display.poll_events() {
+                match event {
+                    glutin::Event::Closed => running = false,
+                    //glutin::Event::Resized(width, height) => self.app.resize(width, height, &self.midgar),
+                    //glutin::Event::ReceivedCharacter(c) => println!("Char: {}", c),
+                    _ => {},
+                }
+            }
+
+            // TODO: Implement resizing via glutin's resize callback. Simply track the last call to
+            // the callback.
             // TODO: Process input events
-            // TODO: Call app step func
+
+            // Call app step func
+            self.app.step(&self.midgar);
+
             // TODO: Sleep zzzzz
         }
 
@@ -52,14 +75,16 @@ impl<T: App> MidgarApp<T> {
 
 pub struct Midgar {
     //pub time: Time,
+    pub display: glium::Display,
     pub graphics: Graphics,
     pub input: Input,
 }
 
 impl Midgar {
-    fn new() -> Self {
+    fn new(display: glium::Display) -> Self {
         Midgar {
             //time: Time::new(),
+            display: display,
             graphics: Graphics,
             input: Input,
         }

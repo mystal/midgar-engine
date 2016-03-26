@@ -1,6 +1,8 @@
 extern crate glium;
 extern crate glutin;
 
+pub use glium::Surface;
+
 use std::collections::HashSet;
 use std::time::{
     Duration,

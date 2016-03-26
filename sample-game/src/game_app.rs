@@ -1,4 +1,4 @@
-use midgar::{App, Midgar};
+use midgar::{App, Midgar, Surface};
 
 pub struct GameApp; /*{
     //sprite_manager: SpriteManager,
@@ -19,7 +19,11 @@ impl App for GameApp {
     fn step(&mut self, midgar: &Midgar) {
         // NOTE: Framework takes care of tracking inputs for user.
         //world.update();
+
+        let mut target = midgar.display.draw();
+        target.clear_color(0.1, 0.3, 0.4, 1.0);
         //renderer.render(&world.renderables);
+        target.finish().unwrap();
     }
 
     fn resize(&mut self, width: u32, height: u32, midgar: &Midgar) {

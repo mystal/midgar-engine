@@ -2,6 +2,11 @@ extern crate glium;
 extern crate glutin;
 
 use std::collections::HashSet;
+use std::time::{
+    Duration,
+    Instant,
+};
+use std::thread;
 
 use glium::DisplayBuild;
 
@@ -14,22 +19,31 @@ pub trait App {
     fn destroy(&mut self, midgar: &Midgar) {}
 }
 
-pub struct MidgarAppConfig; /*{
-}*/
+pub struct MidgarAppConfig {
+    fps: u8,
+}
 
 impl MidgarAppConfig {
     pub fn new() -> Self {
-        MidgarAppConfig
+        MidgarAppConfig {
+            fps: 60,
+        }
     }
 }
 
 pub struct MidgarApp<T: App> {
+    frame_time: Duration,
     midgar: Midgar,
     app: T,
 }
 
 impl<T: App> MidgarApp<T> {
     pub fn new(config: MidgarAppConfig) -> Self {
+        // Compute the frame_time Duration from FPS.
+        // TODO: Consider using nanosecond accuracy instead of milliseconds.
+        let frame_time_ms = ((1.0 / config.fps as f64) * 1000.0) as u64;
+        let frame_time = Duration::from_millis(frame_time_ms);
+
         // TODO: Set window options from app config
         let display = glutin::WindowBuilder::new()
             .build_glium()
@@ -39,6 +53,7 @@ impl<T: App> MidgarApp<T> {
         let app = T::create(&midgar);
 
         MidgarApp {
+            frame_time: frame_time,
             midgar: midgar,
             app: app,
         }
@@ -49,6 +64,10 @@ impl<T: App> MidgarApp<T> {
 
         // Game loop
         while running {
+            let start_time = Instant::now();
+
+            self.midgar.input.begin_frame();
+
             // TODO: Gather events
             for event in self.midgar.display.poll_events() {
                 match event {
@@ -68,7 +87,11 @@ impl<T: App> MidgarApp<T> {
             // Call app step func
             self.app.step(&self.midgar);
 
-            // TODO: Sleep zzzzz
+            // Sleep
+            let time_elapsed = start_time.elapsed();
+            if time_elapsed < self.frame_time {
+                thread::sleep(self.frame_time - time_elapsed);
+            }
         }
 
         self.app.destroy(&self.midgar);

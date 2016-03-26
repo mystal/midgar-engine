@@ -67,6 +67,7 @@ impl<T: App> MidgarApp<T> {
         // Game loop
         while running {
             let start_time = Instant::now();
+            self.midgar.time.update();
 
             self.midgar.input.begin_frame();
 
@@ -101,7 +102,7 @@ impl<T: App> MidgarApp<T> {
 }
 
 pub struct Midgar {
-    //pub time: Time,
+    pub time: Time,
     pub display: glium::Display,
     pub graphics: Graphics,
     pub input: Input,
@@ -110,7 +111,7 @@ pub struct Midgar {
 impl Midgar {
     fn new(display: glium::Display) -> Self {
         Midgar {
-            //time: Time::new(),
+            time: Time::new(),
             display: display,
             graphics: Graphics,
             input: Input::new(),
@@ -119,12 +120,28 @@ impl Midgar {
 }
 
 pub struct Time {
-    // The number of nanoseconds since the last call to step (current_time - last_frame_time)
-    pub delta_time: u64,
-    last_frame_time: u64,
+    delta_time: Duration,
+    last_frame_time: Instant,
 }
 
-// TODO: Implement time's methods
+impl Time {
+    fn new() -> Self {
+        Time {
+            delta_time: Duration::from_secs(0),
+            last_frame_time: Instant::now(),
+        }
+    }
+
+    fn update(&mut self) {
+        let frame_time = Instant::now();
+        self.delta_time = frame_time - self.last_frame_time;
+        self.last_frame_time = frame_time;
+    }
+
+    pub fn delta_time(&self) -> f64 {
+        self.delta_time.as_secs() as f64 + (self.delta_time.subsec_nanos() as f64 / 1_000_000_000.0)
+    }
+}
 
 // TODO: What the fuck do we do here?
 pub struct Graphics; /*{

@@ -49,7 +49,6 @@ impl App for GameApp {
         // NOTE: Framework takes care of tracking inputs for user.
         //world.update();
 
-
         // TODO: Have draw be called on graphics
         let mut target = midgar.graphics().display.draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);

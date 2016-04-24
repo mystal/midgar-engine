@@ -4,4 +4,7 @@ version = "0.1.0"
 authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 
 [dependencies]
+cgmath = "*"
+glium = "*"
+image = "*"
 midgar = { path = "../midgar" }

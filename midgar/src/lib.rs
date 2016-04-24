@@ -1,7 +1,11 @@
+extern crate cgmath;
+#[macro_use]
 extern crate glium;
 extern crate glutin;
 
 pub use glium::Surface;
+
+pub use glutin::VirtualKeyCode;
 
 use std::collections::HashSet;
 use std::time::{
@@ -12,9 +16,12 @@ use std::thread;
 
 use glium::DisplayBuild;
 
+pub mod sprite;
+
+
 pub trait App {
     fn create(midgar: &Midgar) -> Self;
-    fn step(&mut self, midgar: &Midgar) {}
+    fn step(&mut self, midgar: &mut Midgar) {}
     fn resize(&mut self, width: u32, height: u32, midgar: &Midgar) {}
     fn pause(&mut self, midgar: &Midgar) {}
     fn resume(&mut self, midgar: &Midgar) {}
@@ -62,20 +69,22 @@ impl<T: App> MidgarApp<T> {
     }
 
     pub fn run(mut self) {
-        let mut running = true;
+        let mut window_closed = false;
+        let mut win_size = self.midgar.graphics.display.get_framebuffer_dimensions();
+        let mut resized: Option<(u32, u32)> = None;
 
         // Game loop
-        while running {
+        while !window_closed && !self.midgar.should_exit() {
             let start_time = Instant::now();
             self.midgar.time.update();
 
             self.midgar.input.begin_frame();
 
             // TODO: Gather events
-            for event in self.midgar.display.poll_events() {
+            for event in self.midgar.graphics.display.poll_events() {
                 match event {
-                    glutin::Event::Closed => running = false,
-                    //glutin::Event::Resized(width, height) => self.app.resize(width, height, &self.midgar),
+                    glutin::Event::Closed => window_closed = true,
+                    glutin::Event::Resized(width, height) => resized = Some((width, height)),
                     glutin::Event::KeyboardInput(state, scancode, keycode) =>
                         self.midgar.input.handle_keyboard_input(state, scancode, keycode),
                     //glutin::Event::ReceivedCharacter(c) => println!("Char: {}", c),
@@ -85,10 +94,22 @@ impl<T: App> MidgarApp<T> {
 
             // TODO: Implement resizing via glutin's resize callback. Simply track the last call to
             // the callback.
+
+            // Detect resize on platforms where Resized event does not work.
+            let cur_win_size = self.midgar.graphics.display.get_framebuffer_dimensions();
+            if cur_win_size != win_size {
+                resized = Some(cur_win_size);
+                win_size = cur_win_size;
+            }
+            if let Some((width, height)) = resized {
+                self.app.resize(width, height, &self.midgar);
+                resized = None;
+            }
+
             // TODO: Process input events
 
             // Call app step func
-            self.app.step(&self.midgar);
+            self.app.step(&mut self.midgar);
 
             // Sleep
             let time_elapsed = start_time.elapsed();
@@ -103,19 +124,31 @@ impl<T: App> MidgarApp<T> {
 
 pub struct Midgar {
     pub time: Time,
-    pub display: glium::Display,
     pub graphics: Graphics,
     pub input: Input,
+    should_exit: bool,
 }
 
 impl Midgar {
     fn new(display: glium::Display) -> Self {
+        let graphics = Graphics {
+            display: display,
+        };
+
         Midgar {
             time: Time::new(),
-            display: display,
-            graphics: Graphics,
+            graphics: graphics,
             input: Input::new(),
+            should_exit: false,
         }
+    }
+
+    pub fn set_should_exit(&mut self) {
+        self.should_exit = true
+    }
+
+    pub fn should_exit(&self) -> bool {
+        self.should_exit
     }
 }
 
@@ -143,9 +176,14 @@ impl Time {
     }
 }
 
-// TODO: What the fuck do we do here?
-pub struct Graphics; /*{
-}*/
+pub struct Graphics {
+    pub display: glium::Display,
+}
+
+impl Graphics {
+    fn draw(&self) {
+    }
+}
 
 // Implement a useful structure that holds current input state.
 // TODO: Track mouse buttons and mouse position

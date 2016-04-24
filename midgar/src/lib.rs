@@ -123,9 +123,9 @@ impl<T: App> MidgarApp<T> {
 }
 
 pub struct Midgar {
-    pub time: Time,
-    pub graphics: Graphics,
-    pub input: Input,
+    time: Time,
+    graphics: Graphics,
+    input: Input,
     should_exit: bool,
 }
 
@@ -141,6 +141,18 @@ impl Midgar {
             input: Input::new(),
             should_exit: false,
         }
+    }
+
+    pub fn time(&self) -> &Time {
+        &self.time
+    }
+
+    pub fn graphics(&self) -> &Graphics {
+        &self.graphics
+    }
+
+    pub fn input(&self) -> &Input {
+        &self.input
     }
 
     pub fn set_should_exit(&mut self) {

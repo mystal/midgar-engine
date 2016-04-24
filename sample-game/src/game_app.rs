@@ -22,16 +22,16 @@ impl App for GameApp {
         let image_dimensions = image.dimensions();
         println!("Image dimensions: {:?}", image_dimensions);
         let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
-        let texture = glium::Texture2d::new(&midgar.graphics.display, image).unwrap();
+        let texture = glium::Texture2d::new(&midgar.graphics().display, image).unwrap();
         let mut sprite = Sprite::new(texture);
         sprite.set_position(cgmath::vec2(200.0, 200.0));
         sprite.set_color(cgmath::vec3(0.0, 1.0, 0.0));
 
-        let (screen_width, screen_height) = midgar.graphics.display.get_framebuffer_dimensions();
+        let (screen_width, screen_height) = midgar.graphics().display.get_framebuffer_dimensions();
         let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
 
         GameApp {
-            sprite_renderer: SpriteRenderer::new(&midgar.graphics.display),
+            sprite_renderer: SpriteRenderer::new(&midgar.graphics().display),
             sprite: sprite,
             projection: projection,
             //sprite_manager: SpriteManager::load(),
@@ -41,7 +41,7 @@ impl App for GameApp {
     }
 
     fn step(&mut self, midgar: &mut Midgar) {
-        if midgar.input.was_key_pressed(&VirtualKeyCode::Escape) {
+        if midgar.input().was_key_pressed(&VirtualKeyCode::Escape) {
             midgar.set_should_exit();
             return;
         }
@@ -51,7 +51,7 @@ impl App for GameApp {
 
 
         // TODO: Have draw be called on graphics
-        let mut target = midgar.graphics.display.draw();
+        let mut target = midgar.graphics().display.draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         self.sprite_renderer.draw_sprite(&self.sprite, &self.projection, &mut target);
         //renderer.render(&world.renderables);

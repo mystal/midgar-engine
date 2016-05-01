@@ -7,3 +7,4 @@ authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 cgmath = "*"
 glutin = "*"
 glium = "*"
+image = "*"

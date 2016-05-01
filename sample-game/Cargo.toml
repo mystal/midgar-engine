@@ -6,5 +6,4 @@ authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 [dependencies]
 cgmath = "*"
 glium = "*"
-image = "*"
 midgar = { path = "../midgar" }

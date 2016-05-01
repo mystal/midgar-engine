@@ -1,6 +1,5 @@
 extern crate cgmath;
 extern crate glium;
-extern crate image;
 extern crate midgar;
 
 use midgar::{MidgarApp, MidgarAppConfig};

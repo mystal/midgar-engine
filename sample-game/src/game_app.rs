@@ -1,6 +1,4 @@
 use cgmath;
-use glium;
-use image;
 use midgar::{App, Midgar, Surface, VirtualKeyCode};
 use midgar::sprite::{Sprite, SpriteRenderer};
 
@@ -16,13 +14,7 @@ pub struct GameApp {
 
 impl App for GameApp {
     fn create(midgar: &Midgar) -> Self {
-        // TODO: Have midgar provide image loading
-        //let texture = midgar.graphics.load_texture("assets/awesomeface.png").unwrap();
-        let image = image::open("assets/awesomeface.png").unwrap().to_rgba();
-        let image_dimensions = image.dimensions();
-        println!("Image dimensions: {:?}", image_dimensions);
-        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
-        let texture = glium::Texture2d::new(&midgar.graphics().display, image).unwrap();
+        let texture = midgar.graphics().load_texture("assets/awesomeface.png");
         let mut sprite = Sprite::new(texture);
         sprite.set_position(cgmath::vec2(200.0, 200.0));
         sprite.set_color(cgmath::vec3(0.0, 1.0, 0.0));

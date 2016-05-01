@@ -4,7 +4,6 @@ version = "0.1.0"
 dependencies = [
  "cgmath 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.13.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "image 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "midgar 0.1.0",
 ]
 
@@ -412,6 +411,7 @@ dependencies = [
  "cgmath 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.13.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "glutin 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "image 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

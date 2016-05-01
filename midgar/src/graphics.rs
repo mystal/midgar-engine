@@ -1,5 +1,8 @@
+use std::path::Path;
+
 use glium::{self, DisplayBuild};
 use glutin;
+use image;
 
 use config::MidgarAppConfig;
 
@@ -19,6 +22,14 @@ impl Graphics {
         Graphics {
             display: display,
         }
+    }
+
+    // FIXME: Return a Result.
+    pub fn load_texture<P: AsRef<Path>>(&self, path: P) -> glium::Texture2d {
+        let image = image::open(path).unwrap().to_rgba();
+        let image_dimensions = image.dimensions();
+        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
+        glium::Texture2d::new(&self.display, image).unwrap()
     }
 
     fn draw(&self) {

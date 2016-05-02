@@ -24,6 +24,10 @@ impl Graphics {
         }
     }
 
+    pub fn screen_size(&self) -> (u32, u32) {
+        self.display.get_framebuffer_dimensions()
+    }
+
     // FIXME: Return a Result.
     pub fn load_texture<P: AsRef<Path>>(&self, path: P) -> glium::Texture2d {
         let image = image::open(path).unwrap().to_rgba();

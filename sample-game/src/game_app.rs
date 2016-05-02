@@ -19,7 +19,7 @@ impl App for GameApp {
         sprite.set_position(cgmath::vec2(200.0, 200.0));
         sprite.set_color(cgmath::vec3(0.0, 1.0, 0.0));
 
-        let (screen_width, screen_height) = midgar.graphics().display.get_framebuffer_dimensions();
+        let (screen_width, screen_height) = midgar.graphics().screen_size();
         let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
 
         GameApp {
@@ -49,10 +49,10 @@ impl App for GameApp {
         target.finish().unwrap();
     }
 
-    fn resize(&mut self, width: u32, height: u32, midgar: &Midgar) {
-        //renderer.resize(width, height);
-        println!("Resize: {}, {}", width, height);
-        self.projection = cgmath::ortho(0.0, width as f32, 0.0, height as f32, -1.0, 1.0);
+    fn resize(&mut self, size: (u32, u32), midgar: &Midgar) {
+        //renderer.resize(size);
+        println!("Resize: {:?}", size);
+        self.projection = cgmath::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
     }
 
     fn pause(&mut self, midgar: &Midgar) {

@@ -86,8 +86,8 @@ impl<T: App> MidgarApp<T> {
                 resized = Some(cur_win_size);
                 win_size = cur_win_size;
             }
-            if let Some((width, height)) = resized {
-                self.app.resize(width, height, &self.midgar);
+            if let Some(size) = resized {
+                self.app.resize(size, &self.midgar);
                 resized = None;
             }
 

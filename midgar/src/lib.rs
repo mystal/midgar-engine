@@ -5,11 +5,11 @@ extern crate glutin;
 extern crate image;
 
 pub use glium::Surface;
+pub use glium::uniforms::MagnifySamplerFilter;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
 pub use input::VirtualKeyCode;
-//pub use midgar::Midgar;
 
 use std::time::{
     Duration,
@@ -25,7 +25,6 @@ mod app;
 mod config;
 mod graphics;
 mod input;
-//mod midgar;
 pub mod sprite;
 mod time;
 

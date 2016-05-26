@@ -104,9 +104,14 @@ impl SpriteRenderer {
             projection: cgmath::conv::array4x4(*projection),
         };
 
-        // TODO: Set alpha blending from sprite.
+        // Set alpha blending from sprite.
+        let blend = if sprite.alpha {
+            glium::Blend::alpha_blending()
+        } else {
+            Default::default()
+        };
         let params = glium::DrawParameters {
-            blend: glium::Blend::alpha_blending(),
+            blend: blend,
             .. Default::default()
         };
 
@@ -132,6 +137,7 @@ pub struct Sprite {
     normalized_size: Vector2<f32>,
 
     magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>,
+    alpha: bool,
 }
 
 impl Sprite {
@@ -157,6 +163,7 @@ impl Sprite {
             normalized_size: cgmath::vec2(1.0, 1.0),
 
             magnify_filter: None,
+            alpha: false,
         }
     }
 
@@ -190,6 +197,7 @@ impl Sprite {
             normalized_size: normalized_size,
 
             magnify_filter: None,
+            alpha: false,
         }
     }
 
@@ -235,6 +243,14 @@ impl Sprite {
 
     pub fn set_magnify_filter(&mut self, magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>) {
         self.magnify_filter = magnify_filter;
+    }
+
+    pub fn alpha(&self) -> bool {
+        self.alpha
+    }
+
+    pub fn set_alpha(&mut self, alpha: bool) {
+        self.alpha = alpha;
     }
 
     pub fn texture_coordinates(&self) -> [[f32; 2]; 4] {

@@ -1,15 +1,31 @@
 pub struct MidgarAppConfig {
     fps: u8,
+    screen_size: (u32, u32),
 }
 
 impl MidgarAppConfig {
     pub fn new() -> Self {
         MidgarAppConfig {
             fps: 60,
+            screen_size: (800, 600),
         }
+    }
+
+    pub fn with_fps(mut self, fps: u8) -> Self {
+        self.fps = fps;
+        self
     }
 
     pub fn fps(&self) -> u8 {
         self.fps
+    }
+
+    pub fn with_screen_size(mut self, screen_size: (u32, u32)) -> Self {
+        self.screen_size = screen_size;
+        self
+    }
+
+    pub fn screen_size(&self) -> (u32, u32) {
+        self.screen_size
     }
 }

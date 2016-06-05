@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
@@ -121,7 +123,7 @@ impl SpriteRenderer {
 
 // TODO: Use an Rc or some other kind of reference for the texture.
 pub struct Sprite {
-    texture: glium::Texture2d,
+    texture: Rc<glium::Texture2d>,
     texture_size: Vector2<u32>,
 
     position: Vector2<f32>,
@@ -141,7 +143,7 @@ pub struct Sprite {
 }
 
 impl Sprite {
-    pub fn new(texture: glium::Texture2d) -> Self {
+    pub fn new(texture: Rc<glium::Texture2d>) -> Self {
         let texture_size = texture.as_surface().get_dimensions();
         let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
         let origin = cgmath::vec2(texture_size.x as f32 / 2.0, texture_size.y as f32 / 2.0);
@@ -167,7 +169,7 @@ impl Sprite {
         }
     }
 
-    pub fn with_sub_field(texture: glium::Texture2d, offset: (u32, u32), size: (u32, u32)) -> Self {
+    pub fn with_sub_field(texture: Rc<glium::Texture2d>, offset: (u32, u32), size: (u32, u32)) -> Self {
         let texture_size = texture.as_surface().get_dimensions();
         let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
 

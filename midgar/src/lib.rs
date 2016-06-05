@@ -4,7 +4,7 @@ extern crate glium;
 extern crate glutin;
 extern crate image;
 
-pub use glium::Surface;
+pub use glium::{Surface, Texture2d};
 pub use glium::uniforms::MagnifySamplerFilter;
 
 pub use app::App;

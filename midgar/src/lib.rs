@@ -26,6 +26,7 @@ mod config;
 mod graphics;
 mod input;
 pub mod sprite;
+pub mod texture_region;
 mod time;
 
 

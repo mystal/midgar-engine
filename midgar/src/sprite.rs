@@ -4,6 +4,8 @@ use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
 
+use texture_region::TextureRegion;
+
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs");
 const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs");
@@ -56,11 +58,12 @@ impl SpriteRenderer {
                                    target: &mut S) {
         // TODO: Cache model in sprite?
         let model = {
-            let scaled_size = sprite.size.cast::<f32>().mul_element_wise(sprite.scale);
+            let scaled_size = sprite.size().cast::<f32>().mul_element_wise(sprite.scale);
             let translate = Matrix4::from_translation(sprite.position.cast::<f32>().extend(0.0));
             let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
             let rotate_angle = cgmath::deg(sprite.rotation);
             let rotate_rotation: Matrix4<f32> = Matrix3::from_axis_angle(rotate_axis, rotate_angle.into()).into();
+            // FIXME: Rotate around Sprite's origin
             let rotate =
                 Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
                 rotate_rotation *
@@ -93,9 +96,9 @@ impl SpriteRenderer {
         let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
         let texture = if let Some(magnify_filter) = sprite.magnify_filter {
-            sprite.texture.sampled().magnify_filter(magnify_filter)
+            sprite.texture().sampled().magnify_filter(magnify_filter)
         } else {
-            sprite.texture.sampled()
+            sprite.texture().sampled()
         };
 
         let uniforms = uniform! {
@@ -121,22 +124,14 @@ impl SpriteRenderer {
     }
 }
 
-// TODO: Use an Rc or some other kind of reference for the texture.
 pub struct Sprite {
-    texture: Rc<glium::Texture2d>,
-    texture_size: Vector2<u32>,
+    texture_region: TextureRegion,
 
     position: Vector2<f32>,
-    offset: Vector2<u32>,
-    size: Vector2<u32>,
-
     origin: Vector2<f32>,
     rotation: f32,
     scale: Vector2<f32>,
     color: Vector3<f32>,
-
-    normalized_offset: Vector2<f32>,
-    normalized_size: Vector2<f32>,
 
     magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>,
     alpha: bool,
@@ -144,25 +139,18 @@ pub struct Sprite {
 
 impl Sprite {
     pub fn new(texture: Rc<glium::Texture2d>) -> Self {
-        let texture_size = texture.as_surface().get_dimensions();
-        let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
-        let origin = cgmath::vec2(texture_size.x as f32 / 2.0, texture_size.y as f32 / 2.0);
+        let texture_region = TextureRegion::new(texture);
+        let origin = cgmath::vec2(texture_region.texture_size().x as f32 / 2.0,
+                                  texture_region.texture_size().y as f32 / 2.0);
 
         Sprite {
-            texture: texture,
-            texture_size: texture_size,
+            texture_region: texture_region,
 
             position: cgmath::vec2(0.0, 0.0),
-            offset: cgmath::vec2(0, 0),
-            size: texture_size,
-
             origin: origin,
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
-
-            normalized_offset: cgmath::vec2(0.0, 0.0),
-            normalized_size: cgmath::vec2(1.0, 1.0),
 
             magnify_filter: None,
             alpha: false,
@@ -170,37 +158,29 @@ impl Sprite {
     }
 
     pub fn with_sub_field(texture: Rc<glium::Texture2d>, offset: (u32, u32), size: (u32, u32)) -> Self {
-        let texture_size = texture.as_surface().get_dimensions();
-        let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
-
-        let offset = cgmath::vec2(offset.0, offset.1);
-        let size = cgmath::vec2(size.0, size.1);
-        let origin = offset.cast::<f32>() + (size.cast::<f32>() / 2.0);
-
-        let normalized_offset = cgmath::vec2(offset.x as f32 / texture_size.x as f32,
-                                             offset.y as f32 / texture_size.y as f32);
-        let normalized_size = cgmath::vec2(size.x as f32 / texture_size.x as f32,
-                                           size.y as f32 / texture_size.y as f32);
+        let texture_region = TextureRegion::with_sub_field(texture, offset, size);
+        let origin = texture_region.offset().cast::<f32>() + (texture_region.size().cast::<f32>() / 2.0);
 
         Sprite {
-            texture: texture,
-            texture_size: texture_size,
+            texture_region: texture_region,
 
             position: cgmath::vec2(0.0, 0.0),
-            offset: offset,
-            size: size,
-
             origin: origin,
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
 
-            normalized_offset: normalized_offset,
-            normalized_size: normalized_size,
-
             magnify_filter: None,
             alpha: false,
         }
+    }
+
+    pub fn set_flip_x(&mut self, flip: bool) {
+        self.texture_region.set_flip_x(flip);
+    }
+
+    pub fn set_flip_y(&mut self, flip: bool) {
+        self.texture_region.set_flip_y(flip);
     }
 
     pub fn set_position(&mut self, position: Vector2<f32>) {
@@ -255,13 +235,31 @@ impl Sprite {
         self.alpha = alpha;
     }
 
+    pub fn texture(&self) -> &glium::Texture2d {
+        self.texture_region.texture()
+    }
+
+    pub fn texture_size(&self) -> Vector2<u32> {
+        self.texture_region.texture_size()
+    }
+
+    pub fn offset(&self) -> Vector2<u32> {
+        self.texture_region.offset()
+    }
+
+    pub fn size(&self) -> Vector2<u32> {
+        self.texture_region.size()
+    }
+
+    pub fn normalized_offset(&self) -> Vector2<f32> {
+        self.texture_region.normalized_offset()
+    }
+
+    pub fn normalized_size(&self) -> Vector2<f32> {
+        self.texture_region.normalized_size()
+    }
+
     pub fn texture_coordinates(&self) -> [[f32; 2]; 4] {
-        [
-            // Return top left, top right, bottom left, bottom right
-            [self.normalized_offset.x, self.normalized_offset.y + self.normalized_size.y],
-            [self.normalized_offset.x + self.normalized_size.x, self.normalized_offset.y + self.normalized_size.y],
-            [self.normalized_offset.x, self.normalized_offset.y],
-            [self.normalized_offset.x + self.normalized_size.x, self.normalized_offset.y],
-        ]
+        self.texture_region.texture_coordinates()
     }
 }

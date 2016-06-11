@@ -3,6 +3,7 @@ use std::rc::Rc;
 use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
+use glium::uniforms::MagnifySamplerFilter;
 
 use texture_region::TextureRegion;
 
@@ -52,6 +53,78 @@ impl SpriteRenderer {
             shader: shader,
             vertex_buffer: vertex_buffer,
         }
+    }
+
+    // TODO: Pull out common drawing logic.
+    pub fn draw_region<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
+                                   width: f32, height: f32, projection: &Matrix4<f32>,
+                                   target: &mut S) {
+        // TODO: Cache model in sprite?
+        let scale = 1.0f32;
+        let position = cgmath::vec2(x, y);
+        let rotation = 0.0f32;
+        let model = {
+            let scaled_size = region.size().cast::<f32>().mul_element_wise(scale);
+            let translate = Matrix4::from_translation(position.extend(0.0));
+            let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
+            let rotate_angle = cgmath::deg(rotation);
+            let rotate_rotation: Matrix4<f32> = Matrix3::from_axis_angle(rotate_axis, rotate_angle.into()).into();
+            // FIXME: Rotate around Sprite's origin
+            let rotate =
+                Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
+                rotate_rotation *
+                Matrix4::from_translation(cgmath::vec3(-0.5 * scaled_size.x, -0.5 * scaled_size.y, 0.0));
+            let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
+            translate * rotate * scale
+        };
+
+        let tex_coords = region.texture_coordinates();
+
+        let top_left = tex_coords[0];
+        let top_right = tex_coords[1];
+        let bottom_left = tex_coords[2];
+        let bottom_right = tex_coords[3];
+
+        let normalized_width = width / region.size().x as f32;
+        let normalized_height = height / region.size().y as f32;
+
+        let vertices = &[
+            Vertex { vertex: [0.0, normalized_height, top_left[0], top_left[1]] },
+            Vertex { vertex: [normalized_width, 0.0, bottom_right[0], bottom_right[1]] },
+            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
+            Vertex { vertex: [0.0, normalized_height, top_left[0], top_left[1]] },
+            Vertex { vertex: [normalized_width, normalized_height, top_right[0], top_right[1]] },
+            Vertex { vertex: [normalized_width, 0.0, bottom_right[0], bottom_right[1]] },
+        ];
+        // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
+        // vertex data each time you go to draw. So copy the data to the vertex buffer here!
+        self.vertex_buffer.write(vertices);
+
+        // FIXME: We want to use indexed vertices to pass in 4 vertices instead of 6.
+        //let indices = [0, 1, 2, 0, 2, 3];
+        let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+        // TODO: Let user specify texture filter.
+        let texture =  region.texture().sampled().magnify_filter(MagnifySamplerFilter::Nearest);
+
+        // TODO: Let user specify color.
+        let color = [1.0f32, 1.0, 1.0];
+        let uniforms = uniform! {
+            image: texture,
+            spriteColor: color,
+            model: cgmath::conv::array4x4(model),
+            view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
+            projection: cgmath::conv::array4x4(*projection),
+        };
+
+        // TODO: Let user specify alpha blending.
+        let blend =  Default::default();
+        let params = glium::DrawParameters {
+            blend: blend,
+            .. Default::default()
+        };
+
+        target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
     }
 
     pub fn draw_sprite<S: Surface>(&self, sprite: &Sprite, projection: &Matrix4<f32>,

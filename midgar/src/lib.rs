@@ -25,6 +25,7 @@ mod app;
 mod config;
 mod graphics;
 mod input;
+pub mod shape;
 pub mod sprite;
 pub mod texture_region;
 mod time;

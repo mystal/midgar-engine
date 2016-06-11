@@ -14,12 +14,11 @@ pub struct Graphics {
 impl Graphics {
     // FIXME: This shouldn't be accessible outside the crate.
     pub fn new(config: &MidgarAppConfig) -> Graphics {
-        // TODO: Set window options from app config
         let screen_size = config.screen_size();
-        let display = glutin::WindowBuilder::new()
-            .with_dimensions(screen_size.0, screen_size.1)
-            .build_glium()
-            .unwrap();
+        let window_builder = glutin::WindowBuilder::new()
+            .with_dimensions(screen_size.0, screen_size.1);
+        let window_builder = if config.vsync() { window_builder.with_vsync() } else { window_builder };
+        let display = window_builder.build_glium().unwrap();
 
         Graphics {
             display: display,

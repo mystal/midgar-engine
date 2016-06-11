@@ -1,6 +1,7 @@
 pub struct MidgarAppConfig {
     fps: u8,
     screen_size: (u32, u32),
+    vsync: bool,
 }
 
 impl MidgarAppConfig {
@@ -8,6 +9,7 @@ impl MidgarAppConfig {
         MidgarAppConfig {
             fps: 60,
             screen_size: (800, 600),
+            vsync: true,
         }
     }
 
@@ -27,5 +29,14 @@ impl MidgarAppConfig {
 
     pub fn screen_size(&self) -> (u32, u32) {
         self.screen_size
+    }
+
+    pub fn with_vsync(mut self, vsync: bool) -> Self {
+        self.vsync = vsync;
+        self
+    }
+
+    pub fn vsync(&self) -> bool {
+        self.vsync
     }
 }

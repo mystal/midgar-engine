@@ -6,6 +6,11 @@ use image;
 
 use config::MidgarAppConfig;
 
+pub mod animation;
+pub mod shape;
+pub mod sprite;
+pub mod texture_region;
+
 
 pub struct Graphics {
     pub display: glium::Display,

@@ -5,7 +5,7 @@ use cgmath::prelude::*;
 use glium::{self, Surface};
 use glium::uniforms::MagnifySamplerFilter;
 
-use texture_region::TextureRegion;
+use super::texture_region::TextureRegion;
 
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs");
@@ -55,14 +55,19 @@ impl SpriteRenderer {
         }
     }
 
-    // TODO: Pull out common drawing logic.
     pub fn draw_region<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
                                    width: f32, height: f32, projection: &Matrix4<f32>,
                                    target: &mut S) {
+        self.draw_region_with_rotation(region, x, y, 0.0, width, height, projection, target);
+    }
+
+    // TODO: Pull out common drawing logic.
+    pub fn draw_region_with_rotation<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
+                                                 rotation: f32, width: f32, height: f32,
+                                                 projection: &Matrix4<f32>, target: &mut S) {
         // TODO: Cache model in sprite?
         let scale = 1.0f32;
         let position = cgmath::vec2(x, y);
-        let rotation = 0.0f32;
         let model = {
             let scaled_size = region.size().cast::<f32>().mul_element_wise(scale);
             let translate = Matrix4::from_translation(position.extend(0.0));
@@ -104,8 +109,11 @@ impl SpriteRenderer {
         //let indices = [0, 1, 2, 0, 2, 3];
         let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        // TODO: Let user specify texture filter.
-        let texture =  region.texture().sampled().magnify_filter(MagnifySamplerFilter::Nearest);
+        let texture = if let Some(magnify_filter) = region.magnify_filter() {
+            region.texture().sampled().magnify_filter(magnify_filter)
+        } else {
+            region.texture().sampled()
+        };
 
         // TODO: Let user specify color.
         let color = [1.0f32, 1.0, 1.0];
@@ -117,8 +125,12 @@ impl SpriteRenderer {
             projection: cgmath::conv::array4x4(*projection),
         };
 
-        // TODO: Let user specify alpha blending.
-        let blend =  Default::default();
+        // Set alpha blending from sprite.
+        let blend = if region.alpha() {
+            glium::Blend::alpha_blending()
+        } else {
+            Default::default()
+        };
         let params = glium::DrawParameters {
             blend: blend,
             .. Default::default()
@@ -168,7 +180,7 @@ impl SpriteRenderer {
         //let indices = [0, 1, 2, 0, 2, 3];
         let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let texture = if let Some(magnify_filter) = sprite.magnify_filter {
+        let texture = if let Some(magnify_filter) = sprite.magnify_filter() {
             sprite.texture().sampled().magnify_filter(magnify_filter)
         } else {
             sprite.texture().sampled()
@@ -183,7 +195,7 @@ impl SpriteRenderer {
         };
 
         // Set alpha blending from sprite.
-        let blend = if sprite.alpha {
+        let blend = if sprite.alpha() {
             glium::Blend::alpha_blending()
         } else {
             Default::default()
@@ -205,9 +217,6 @@ pub struct Sprite {
     rotation: f32,
     scale: Vector2<f32>,
     color: Vector3<f32>,
-
-    magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>,
-    alpha: bool,
 }
 
 impl Sprite {
@@ -224,9 +233,6 @@ impl Sprite {
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
-
-            magnify_filter: None,
-            alpha: false,
         }
     }
 
@@ -242,9 +248,6 @@ impl Sprite {
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
-
-            magnify_filter: None,
-            alpha: false,
         }
     }
 
@@ -293,19 +296,19 @@ impl Sprite {
     }
 
     pub fn magnify_filter(&self) -> Option<glium::uniforms::MagnifySamplerFilter> {
-        self.magnify_filter
+        self.texture_region.magnify_filter()
     }
 
     pub fn set_magnify_filter(&mut self, magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>) {
-        self.magnify_filter = magnify_filter;
+        self.texture_region.set_magnify_filter(magnify_filter);
     }
 
     pub fn alpha(&self) -> bool {
-        self.alpha
+        self.texture_region.alpha()
     }
 
     pub fn set_alpha(&mut self, alpha: bool) {
-        self.alpha = alpha;
+        self.texture_region.set_alpha(alpha);
     }
 
     pub fn texture(&self) -> &glium::Texture2d {

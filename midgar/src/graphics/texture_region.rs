@@ -5,6 +5,7 @@ use cgmath::{self, Vector2};
 use glium::{self, Surface};
 
 
+#[derive(Clone)]
 pub struct TextureRegion {
     texture: Rc<glium::Texture2d>,
     texture_size: Vector2<u32>,
@@ -12,6 +13,9 @@ pub struct TextureRegion {
     size: Vector2<u32>,
     flip_x: bool,
     flip_y: bool,
+
+    magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>,
+    alpha: bool,
 
     normalized_offset: Vector2<f32>,
     normalized_size: Vector2<f32>,
@@ -29,6 +33,9 @@ impl TextureRegion {
             size: texture_size,
             flip_x: false,
             flip_y: false,
+
+            magnify_filter: None,
+            alpha: false,
 
             normalized_offset: cgmath::vec2(0.0, 0.0),
             normalized_size: cgmath::vec2(1.0, 1.0),
@@ -54,6 +61,9 @@ impl TextureRegion {
             size: size,
             flip_x: false,
             flip_y: false,
+
+            magnify_filter: None,
+            alpha: false,
 
             normalized_offset: normalized_offset,
             normalized_size: normalized_size,
@@ -82,6 +92,22 @@ impl TextureRegion {
 
     pub fn size(&self) -> Vector2<u32> {
         self.size
+    }
+
+    pub fn magnify_filter(&self) -> Option<glium::uniforms::MagnifySamplerFilter> {
+        self.magnify_filter
+    }
+
+    pub fn alpha(&self) -> bool {
+        self.alpha
+    }
+
+    pub fn set_alpha(&mut self, alpha: bool) {
+        self.alpha = alpha;
+    }
+
+    pub fn set_magnify_filter(&mut self, magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>) {
+        self.magnify_filter = magnify_filter;
     }
 
     pub fn normalized_offset(&self) -> Vector2<f32> {

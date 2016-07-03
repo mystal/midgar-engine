@@ -23,11 +23,8 @@ use time::Time;
 
 mod app;
 mod config;
-mod graphics;
+pub mod graphics;
 mod input;
-pub mod shape;
-pub mod sprite;
-pub mod texture_region;
 mod time;
 
 

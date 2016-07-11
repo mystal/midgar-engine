@@ -1,15 +1,16 @@
 extern crate cgmath;
 #[macro_use]
 extern crate glium;
-extern crate glutin;
+extern crate glium_sdl2;
 extern crate image;
+extern crate sdl2;
 
 pub use glium::{Surface, Texture2d};
 pub use glium::uniforms::MagnifySamplerFilter;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
-pub use input::VirtualKeyCode;
+pub use input::KeyCode;
 
 use std::time::{
     Duration,
@@ -18,7 +19,7 @@ use std::time::{
 use std::thread;
 
 use graphics::Graphics;
-use input::Input;
+use input::{ElementState, Input};
 use time::Time;
 
 mod app;
@@ -52,8 +53,10 @@ impl<T: App> MidgarApp<T> {
     }
 
     pub fn run(mut self) {
+        use sdl2::event::{Event, WindowEventId};
+
         let mut window_closed = false;
-        let mut win_size = self.midgar.graphics.display.get_framebuffer_dimensions();
+        let mut win_size = self.midgar.graphics.screen_size();
         let mut resized: Option<(u32, u32)> = None;
 
         // Game loop
@@ -63,14 +66,19 @@ impl<T: App> MidgarApp<T> {
 
             self.midgar.input.begin_frame();
 
-            // TODO: Gather events
-            for event in self.midgar.graphics.display.poll_events() {
+            // Respond to event updates
+            for event in self.midgar.event_pump().poll_iter() {
                 match event {
-                    glutin::Event::Closed => window_closed = true,
-                    glutin::Event::Resized(width, height) => resized = Some((width, height)),
-                    glutin::Event::KeyboardInput(state, scancode, keycode) =>
-                        self.midgar.input.handle_keyboard_input(state, scancode, keycode),
-                    //glutin::Event::ReceivedCharacter(c) => println!("Char: {}", c),
+                    Event::Quit { .. } => window_closed = true,
+                    Event::Window { win_event_id, data1, data2, .. } => {
+                        if win_event_id == WindowEventId::SizeChanged {
+                            resized = Some((data1 as u32, data2 as u32));
+                        }
+                    },
+                    Event::KeyDown { keycode, .. } =>
+                        self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode),
+                    Event::KeyUp { keycode, .. } =>
+                        self.midgar.input.handle_keyboard_input(ElementState::Released, keycode),
                     _ => {},
                 }
             }
@@ -79,7 +87,7 @@ impl<T: App> MidgarApp<T> {
             // the callback.
 
             // Detect resize on platforms where Resized event does not work.
-            let cur_win_size = self.midgar.graphics.display.get_framebuffer_dimensions();
+            let cur_win_size = self.midgar.graphics.screen_size();
             if cur_win_size != win_size {
                 resized = Some(cur_win_size);
                 win_size = cur_win_size;
@@ -106,6 +114,7 @@ impl<T: App> MidgarApp<T> {
 }
 
 pub struct Midgar {
+    sdl_context: sdl2::Sdl,
     time: Time,
     graphics: Graphics,
     input: Input,
@@ -114,9 +123,11 @@ pub struct Midgar {
 
 impl Midgar {
     fn new(config: &MidgarAppConfig) -> Self {
-        let graphics = Graphics::new(config);
+        let sdl_context = sdl2::init().unwrap();
+        let graphics = Graphics::new(config, &sdl_context);
 
         Midgar {
+            sdl_context: sdl_context,
             time: Time::new(),
             graphics: graphics,
             input: Input::new(),
@@ -142,6 +153,10 @@ impl Midgar {
 
     pub fn should_exit(&self) -> bool {
         self.should_exit
+    }
+
+    fn event_pump(&self) -> sdl2::EventPump {
+        self.sdl_context.event_pump().unwrap()
     }
 }
 

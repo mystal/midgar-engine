@@ -22,7 +22,7 @@ pub struct ShapeRenderer {
 }
 
 impl ShapeRenderer {
-    pub fn new(display: &glium::Display) -> Self {
+    pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
             vertex_shader: VERTEX_SHADER_SRC,
@@ -39,7 +39,7 @@ impl ShapeRenderer {
         Self::with_shader(display, shader)
     }
 
-    pub fn with_shader(display: &glium::Display, shader: glium::Program) -> Self {
+    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program) -> Self {
         // TODO: Evaluate other types of buffers.
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(display, QUAD_SIZE).unwrap();
 

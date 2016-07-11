@@ -1,8 +1,9 @@
 use std::path::Path;
 
-use glium::{self, DisplayBuild};
-use glutin;
+use glium;
+use glium_sdl2::{DisplayBuild, SDL2Facade};
 use image;
+use sdl2;
 
 use config::MidgarAppConfig;
 
@@ -13,21 +14,36 @@ pub mod texture_region;
 
 
 pub struct Graphics {
-    pub display: glium::Display,
+    display: SDL2Facade,
 }
 
 impl Graphics {
     // FIXME: This shouldn't be accessible outside the crate.
-    pub fn new(config: &MidgarAppConfig) -> Graphics {
+    pub fn new(config: &MidgarAppConfig, sdl_context: &sdl2::Sdl) -> Self {
+        let video_subsystem = sdl_context.video().unwrap();
+
+        // Set OpenGL version
+        // TODO: Allow App to request OpenGL versions
+        video_subsystem.gl_attr().set_context_version(3, 3);
+        video_subsystem.gl_attr().set_context_profile(sdl2::video::GLProfile::Core);
+
+        // Configure vsync
+        let swap_interval = if config.vsync() { 1 } else { 0 };
+        video_subsystem.gl_set_swap_interval(swap_interval);
+
         let screen_size = config.screen_size();
-        let window_builder = glutin::WindowBuilder::new()
-            .with_dimensions(screen_size.0, screen_size.1);
-        let window_builder = if config.vsync() { window_builder.with_vsync() } else { window_builder };
-        let display = window_builder.build_glium().unwrap();
+        let display = video_subsystem.window(config.title(), screen_size.0, screen_size.1)
+            .resizable()
+            .build_glium()
+            .unwrap();
 
         Graphics {
             display: display,
         }
+    }
+
+    pub fn display(&self) -> &SDL2Facade {
+        &self.display
     }
 
     pub fn screen_size(&self) -> (u32, u32) {

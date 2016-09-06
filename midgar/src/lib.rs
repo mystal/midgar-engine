@@ -10,7 +10,7 @@ pub use glium::uniforms::MagnifySamplerFilter;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
-pub use input::KeyCode;
+pub use input::{KeyCode, Mouse};
 
 use std::time::{
     Duration,
@@ -79,6 +79,12 @@ impl<T: App> MidgarApp<T> {
                         self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode),
                     Event::KeyUp { keycode, .. } =>
                         self.midgar.input.handle_keyboard_input(ElementState::Released, keycode),
+                    Event::MouseButtonDown { mouse_btn, .. } =>
+                        self.midgar.input.handle_mouse_input(ElementState::Pressed, mouse_btn),
+                    Event::MouseButtonUp { mouse_btn, .. } =>
+                        self.midgar.input.handle_mouse_input(ElementState::Released, mouse_btn),
+                    Event::MouseMotion { x, y, .. } =>
+                        self.midgar.input.handle_mouse_motion(x, y),
                     _ => {},
                 }
             }

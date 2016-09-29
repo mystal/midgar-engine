@@ -1,4 +1,4 @@
-use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
+use cgmath::{self, Matrix3, Matrix4};
 use cgmath::prelude::*;
 use glium::{self, Surface};
 

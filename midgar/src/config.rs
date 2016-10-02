@@ -1,5 +1,6 @@
 pub struct MidgarAppConfig {
     fps: u8,
+    resizable: bool,
     screen_size: (u32, u32),
     title: String,
     vsync: bool,
@@ -10,6 +11,7 @@ impl MidgarAppConfig {
         MidgarAppConfig {
             fps: 60,
             screen_size: (800, 600),
+            resizable: false,
             title: "Midgar App".into(),
             vsync: true,
         }
@@ -22,6 +24,15 @@ impl MidgarAppConfig {
 
     pub fn fps(&self) -> u8 {
         self.fps
+    }
+
+    pub fn with_resizable(mut self, resizable: bool) -> Self {
+        self.resizable = resizable;
+        self
+    }
+
+    pub fn resizable(&self) -> bool {
+        self.resizable
     }
 
     pub fn with_screen_size(mut self, screen_size: (u32, u32)) -> Self {

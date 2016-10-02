@@ -32,8 +32,11 @@ impl Graphics {
         video_subsystem.gl_set_swap_interval(swap_interval);
 
         let screen_size = config.screen_size();
-        let display = video_subsystem.window(config.title(), screen_size.0, screen_size.1)
-            .resizable()
+        let mut window_builder = video_subsystem.window(config.title(), screen_size.0, screen_size.1);
+        if config.resizable() {
+            window_builder.resizable();
+        }
+        let display = window_builder
             .build_glium()
             .unwrap();
 

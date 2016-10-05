@@ -2,6 +2,7 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use cgmath::{self, Vector2};
+use cgmath::prelude::*;
 use glium::{self, Surface};
 
 
@@ -11,6 +12,7 @@ pub struct TextureRegion {
     texture_size: Vector2<u32>,
     offset: Vector2<u32>,
     size: Vector2<u32>,
+    scale: Vector2<f32>,
     flip_x: bool,
     flip_y: bool,
 
@@ -19,6 +21,8 @@ pub struct TextureRegion {
 
     normalized_offset: Vector2<f32>,
     normalized_size: Vector2<f32>,
+
+    //normalized_half_pixel: Vector2<f32>,
 }
 
 impl TextureRegion {
@@ -31,6 +35,7 @@ impl TextureRegion {
             texture_size: texture_size,
             offset: cgmath::vec2(0, 0),
             size: texture_size,
+            scale: cgmath::vec2(1.0, 1.0),
             flip_x: false,
             flip_y: false,
 
@@ -39,6 +44,8 @@ impl TextureRegion {
 
             normalized_offset: cgmath::vec2(0.0, 0.0),
             normalized_size: cgmath::vec2(1.0, 1.0),
+
+            //normalized_half_pixel: cgmath::vec2(0.5 / texture_size.x as f32, 0.5 / texture_size.y as f32),
         }
     }
 
@@ -59,6 +66,7 @@ impl TextureRegion {
             texture_size: texture_size,
             offset: offset,
             size: size,
+            scale: cgmath::vec2(1.0, 1.0),
             flip_x: false,
             flip_y: false,
 
@@ -67,7 +75,22 @@ impl TextureRegion {
 
             normalized_offset: normalized_offset,
             normalized_size: normalized_size,
+
+            //normalized_half_pixel: cgmath::vec2(0.5 / texture_size.x as f32, 0.5 / texture_size.y as f32),
         }
+    }
+
+    pub fn set_scale(&mut self, scale: f32) {
+        self.scale.x = scale;
+        self.scale.y = scale;
+    }
+
+    pub fn set_scale_x(&mut self, scale: f32) {
+        self.scale.x = scale;
+    }
+
+    pub fn set_scale_y(&mut self, scale: f32) {
+        self.scale.y = scale;
     }
 
     pub fn set_flip_x(&mut self, flip: bool) {
@@ -92,6 +115,14 @@ impl TextureRegion {
 
     pub fn size(&self) -> Vector2<u32> {
         self.size
+    }
+
+    pub fn scaled_size(&self) -> Vector2<f32> {
+        self.size.cast::<f32>().mul_element_wise(self.scale)
+    }
+
+    pub fn scale(&self) -> Vector2<f32> {
+        self.scale
     }
 
     pub fn magnify_filter(&self) -> Option<glium::uniforms::MagnifySamplerFilter> {
@@ -124,6 +155,17 @@ impl TextureRegion {
         let top_right = [self.normalized_offset.x + self.normalized_size.x, self.normalized_offset.y + self.normalized_size.y];
         let bot_left = [self.normalized_offset.x, self.normalized_offset.y];
         let bot_right = [self.normalized_offset.x + self.normalized_size.x, self.normalized_offset.y];
+
+        // NOTE: Code to try to set UV corners to be in the middle of texels. See:
+        // http://stackoverflow.com/a/6051557
+        //let top_left = [self.normalized_offset.x + self.normalized_half_pixel.x,
+        //                self.normalized_offset.y + self.normalized_size.y - self.normalized_half_pixel.y];
+        //let top_right = [self.normalized_offset.x + self.normalized_size.x - self.normalized_half_pixel.x,
+        //                 self.normalized_offset.y + self.normalized_size.y - self.normalized_half_pixel.y];
+        //let bot_left = [self.normalized_offset.x + self.normalized_half_pixel.x,
+        //                self.normalized_offset.y + self.normalized_half_pixel.y];
+        //let bot_right = [self.normalized_offset.x + self.normalized_size.x - self.normalized_half_pixel.x,
+        //                 self.normalized_offset.y + self.normalized_half_pixel.y];
 
         match (self.flip_x, self.flip_y) {
             (false, false) => [top_left, top_right, bot_left, bot_right],

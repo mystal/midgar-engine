@@ -3,7 +3,6 @@ use std::rc::Rc;
 use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
-use glium::uniforms::MagnifySamplerFilter;
 
 use super::texture_region::TextureRegion;
 
@@ -23,6 +22,7 @@ implement_vertex!(Vertex, vertex);
 
 
 pub struct SpriteRenderer {
+    // TODO: Store projection matrix here?
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
 }
@@ -62,14 +62,16 @@ impl SpriteRenderer {
     }
 
     // TODO: Pull out common drawing logic.
+    // TODO: Instead of having "with_rotation", pass a Transform structure that can scale and
+    // rotate (and position?) the region. And it implements Default, or you can pass None or
+    // something.
     pub fn draw_region_with_rotation<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
                                                  rotation: f32, width: f32, height: f32,
                                                  projection: &Matrix4<f32>, target: &mut S) {
         // TODO: Cache model in sprite?
-        let scale = 1.0f32;
         let position = cgmath::vec2(x, y);
         let model = {
-            let scaled_size = region.size().cast::<f32>().mul_element_wise(scale);
+            let scaled_size = region.scaled_size();
             let translate = Matrix4::from_translation(position.extend(0.0));
             let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
             let rotate_angle = cgmath::deg(rotation);

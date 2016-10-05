@@ -75,8 +75,11 @@ impl<T: App> MidgarApp<T> {
                             resized = Some((data1 as u32, data2 as u32));
                         }
                     },
-                    Event::KeyDown { keycode, .. } =>
-                        self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode),
+                    Event::KeyDown { keycode, repeat, .. } => {
+                        if !repeat {
+                            self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode);
+                        }
+                    },
                     Event::KeyUp { keycode, .. } =>
                         self.midgar.input.handle_keyboard_input(ElementState::Released, keycode),
                     Event::MouseButtonDown { mouse_btn, .. } =>

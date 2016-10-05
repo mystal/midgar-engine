@@ -26,6 +26,7 @@ impl Graphics {
         // TODO: Allow App to request OpenGL versions
         video_subsystem.gl_attr().set_context_version(3, 3);
         video_subsystem.gl_attr().set_context_profile(sdl2::video::GLProfile::Core);
+        // NOTE: SDL2 uses double buffering by default.
 
         // Configure vsync
         let swap_interval = if config.vsync() { 1 } else { 0 };
@@ -54,10 +55,14 @@ impl Graphics {
     }
 
     // FIXME: Return a Result.
-    pub fn load_texture<P: AsRef<Path>>(&self, path: P) -> glium::Texture2d {
+    pub fn load_texture<P: AsRef<Path>>(&self, path: P, reversed: bool) -> glium::Texture2d {
         let image = image::open(path).unwrap().to_rgba();
         let image_dimensions = image.dimensions();
-        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions);
+        let image = if reversed {
+            glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions)
+        } else {
+            glium::texture::RawImage2d::from_raw_rgba(image.into_raw(), image_dimensions)
+        };
         glium::Texture2d::new(&self.display, image).unwrap()
     }
 

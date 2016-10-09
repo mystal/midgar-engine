@@ -10,7 +10,7 @@ pub use glium::uniforms::MagnifySamplerFilter;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
-pub use input::{KeyCode, Mouse};
+pub use input::{Axis, Button, KeyCode, Mouse};
 
 use std::time::{
     Duration,
@@ -53,7 +53,6 @@ impl<T: App> MidgarApp<T> {
     }
 
     pub fn run(mut self) {
-        use sdl2::event::{Event, WindowEventId};
 
         let mut window_closed = false;
         let mut win_size = self.midgar.graphics.screen_size();
@@ -68,26 +67,49 @@ impl<T: App> MidgarApp<T> {
 
             // Respond to event updates
             for event in self.midgar.event_pump().poll_iter() {
+                use sdl2::event::Event::*;
+                use sdl2::event::WindowEventId;
                 match event {
-                    Event::Quit { .. } => window_closed = true,
-                    Event::Window { win_event_id, data1, data2, .. } => {
+                    Quit { .. } => window_closed = true,
+
+                    // Window events.
+                    Window { win_event_id, data1, data2, .. } => {
                         if win_event_id == WindowEventId::SizeChanged {
                             resized = Some((data1 as u32, data2 as u32));
                         }
                     },
-                    Event::KeyDown { keycode, repeat, .. } => {
+
+                    // Keyboard events.
+                    KeyDown { keycode, repeat, .. } => {
                         if !repeat {
                             self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode);
                         }
                     },
-                    Event::KeyUp { keycode, .. } =>
+                    KeyUp { keycode, .. } =>
                         self.midgar.input.handle_keyboard_input(ElementState::Released, keycode),
-                    Event::MouseButtonDown { mouse_btn, .. } =>
+
+                    // Mouse events.
+                    MouseButtonDown { mouse_btn, .. } =>
                         self.midgar.input.handle_mouse_input(ElementState::Pressed, mouse_btn),
-                    Event::MouseButtonUp { mouse_btn, .. } =>
+                    MouseButtonUp { mouse_btn, .. } =>
                         self.midgar.input.handle_mouse_input(ElementState::Released, mouse_btn),
-                    Event::MouseMotion { x, y, .. } =>
+                    MouseMotion { x, y, .. } =>
                         self.midgar.input.handle_mouse_motion(x, y),
+
+                    // Controller events.
+                    ControllerDeviceAdded { which, .. } =>
+                        self.midgar.input.handle_controller_added(which),
+                    ControllerDeviceRemoved { which, .. } =>
+                        self.midgar.input.handle_controller_removed(which),
+                    ControllerDeviceRemapped { which, .. } =>
+                        self.midgar.input.handle_controller_remapped(which),
+                    ControllerAxisMotion { which, axis, value, .. } =>
+                        self.midgar.input.handle_controller_axis(which, axis, value),
+                    ControllerButtonDown { which, button, .. } =>
+                        self.midgar.input.handle_controller_button(which, ElementState::Pressed, button),
+                    ControllerButtonUp { which, button, .. } =>
+                        self.midgar.input.handle_controller_button(which, ElementState::Released, button),
+
                     _ => {},
                 }
             }
@@ -111,8 +133,9 @@ impl<T: App> MidgarApp<T> {
             // Call app step func
             self.app.step(&mut self.midgar);
 
-            // Sleep
+            // Get how long this frame took.
             let time_elapsed = start_time.elapsed();
+            // Sleep for the rest of the remaining frame time.
             if time_elapsed < self.frame_time {
                 thread::sleep(self.frame_time - time_elapsed);
             }
@@ -134,12 +157,13 @@ impl Midgar {
     fn new(config: &MidgarAppConfig) -> Self {
         let sdl_context = sdl2::init().unwrap();
         let graphics = Graphics::new(config, &sdl_context);
+        let input = Input::new(&sdl_context);
 
         Midgar {
             sdl_context: sdl_context,
             time: Time::new(),
             graphics: graphics,
-            input: Input::new(),
+            input: input,
             should_exit: false,
         }
     }

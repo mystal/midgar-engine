@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use cgmath::{self, Matrix3, Matrix4, Vector2, Vector3};
+use cgmath::{self, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
 
@@ -73,9 +73,8 @@ impl SpriteRenderer {
         let model = {
             let scaled_size = region.scaled_size();
             let translate = Matrix4::from_translation(position.extend(0.0));
-            let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
-            let rotate_angle = cgmath::deg(rotation);
-            let rotate_rotation: Matrix4<f32> = Matrix3::from_axis_angle(rotate_axis, rotate_angle.into()).into();
+            let rotate_angle = cgmath::Deg(rotation);
+            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
             // FIXME: Rotate around Sprite's origin
             let rotate =
                 Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
@@ -147,9 +146,8 @@ impl SpriteRenderer {
         let model = {
             let scaled_size = sprite.size().cast::<f32>().mul_element_wise(sprite.scale);
             let translate = Matrix4::from_translation(sprite.position.cast::<f32>().extend(0.0));
-            let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
-            let rotate_angle = cgmath::deg(sprite.rotation);
-            let rotate_rotation: Matrix4<f32> = Matrix3::from_axis_angle(rotate_axis, rotate_angle.into()).into();
+            let rotate_angle = cgmath::Deg(sprite.rotation);
+            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
             // FIXME: Rotate around Sprite's origin
             let rotate =
                 Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *

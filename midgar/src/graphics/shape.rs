@@ -1,4 +1,4 @@
-use cgmath::{self, Matrix3, Matrix4};
+use cgmath::{self, Matrix4};
 use cgmath::prelude::*;
 use glium::{self, Surface};
 
@@ -60,9 +60,8 @@ impl ShapeRenderer {
         let model = {
             let scaled_size = size.mul_element_wise(scale);
             let translate = Matrix4::from_translation(position.extend(0.0));
-            let rotate_axis = cgmath::vec3(0.0f32, 0.0, 1.0);
-            let rotate_angle = cgmath::deg(rotation);
-            let rotate_rotation: Matrix4<f32> = Matrix3::from_axis_angle(rotate_axis, rotate_angle.into()).into();
+            let rotate_angle = cgmath::Deg(rotation);
+            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
             // FIXME: Rotate around Sprite's origin
             let rotate =
                 Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *

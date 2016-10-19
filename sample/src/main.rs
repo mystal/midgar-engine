@@ -5,6 +5,7 @@ use midgar::{MidgarApp, MidgarAppConfig};
 
 mod game_app;
 
+
 fn main() {
     // TODO: Consider using a builder.
     let config = MidgarAppConfig::new();

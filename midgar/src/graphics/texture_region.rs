@@ -175,3 +175,70 @@ impl TextureRegion {
         }
     }
 }
+
+pub trait TextureRegionHolder {
+    fn texture_region(&self) -> &TextureRegion;
+    fn mut_texture_region(&mut self) -> &mut TextureRegion;
+
+    fn set_flip_x(&mut self, flip: bool) {
+        self.mut_texture_region().set_flip_x(flip);
+    }
+
+    fn set_flip_y(&mut self, flip: bool) {
+        self.mut_texture_region().set_flip_y(flip);
+    }
+
+    fn magnify_filter(&self) -> Option<glium::uniforms::MagnifySamplerFilter> {
+        self.texture_region().magnify_filter()
+    }
+
+    fn set_magnify_filter(&mut self, magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>) {
+        self.mut_texture_region().set_magnify_filter(magnify_filter);
+    }
+
+    fn alpha(&self) -> bool {
+        self.texture_region().alpha()
+    }
+
+    fn set_alpha(&mut self, alpha: bool) {
+        self.mut_texture_region().set_alpha(alpha);
+    }
+
+    fn texture(&self) -> &glium::Texture2d {
+        self.texture_region().texture()
+    }
+
+    fn texture_size(&self) -> Vector2<u32> {
+        self.texture_region().texture_size()
+    }
+
+    fn offset(&self) -> Vector2<u32> {
+        self.texture_region().offset()
+    }
+
+    fn size(&self) -> Vector2<u32> {
+        self.texture_region().size()
+    }
+
+    fn normalized_offset(&self) -> Vector2<f32> {
+        self.texture_region().normalized_offset()
+    }
+
+    fn normalized_size(&self) -> Vector2<f32> {
+        self.texture_region().normalized_size()
+    }
+
+    fn texture_coordinates(&self) -> [[f32; 2]; 4] {
+        self.texture_region().texture_coordinates()
+    }
+}
+
+impl TextureRegionHolder for TextureRegion {
+    fn texture_region(&self) -> &TextureRegion {
+        self
+    }
+
+    fn mut_texture_region(&mut self) -> &mut TextureRegion {
+        self
+    }
+}

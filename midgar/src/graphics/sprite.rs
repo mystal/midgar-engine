@@ -4,7 +4,7 @@ use cgmath::{self, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, Surface};
 
-use super::texture_region::TextureRegion;
+use super::texture_region::{TextureRegion, TextureRegionHolder};
 
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs");
@@ -251,14 +251,6 @@ impl Sprite {
         }
     }
 
-    pub fn set_flip_x(&mut self, flip: bool) {
-        self.texture_region.set_flip_x(flip);
-    }
-
-    pub fn set_flip_y(&mut self, flip: bool) {
-        self.texture_region.set_flip_y(flip);
-    }
-
     pub fn set_position(&mut self, position: Vector2<f32>) {
         self.position = position;
     }
@@ -294,48 +286,14 @@ impl Sprite {
     pub fn color(&self) -> Vector3<f32> {
         self.color
     }
+}
 
-    pub fn magnify_filter(&self) -> Option<glium::uniforms::MagnifySamplerFilter> {
-        self.texture_region.magnify_filter()
+impl TextureRegionHolder for Sprite {
+    fn texture_region(&self) -> &TextureRegion {
+        &self.texture_region
     }
 
-    pub fn set_magnify_filter(&mut self, magnify_filter: Option<glium::uniforms::MagnifySamplerFilter>) {
-        self.texture_region.set_magnify_filter(magnify_filter);
-    }
-
-    pub fn alpha(&self) -> bool {
-        self.texture_region.alpha()
-    }
-
-    pub fn set_alpha(&mut self, alpha: bool) {
-        self.texture_region.set_alpha(alpha);
-    }
-
-    pub fn texture(&self) -> &glium::Texture2d {
-        self.texture_region.texture()
-    }
-
-    pub fn texture_size(&self) -> Vector2<u32> {
-        self.texture_region.texture_size()
-    }
-
-    pub fn offset(&self) -> Vector2<u32> {
-        self.texture_region.offset()
-    }
-
-    pub fn size(&self) -> Vector2<u32> {
-        self.texture_region.size()
-    }
-
-    pub fn normalized_offset(&self) -> Vector2<f32> {
-        self.texture_region.normalized_offset()
-    }
-
-    pub fn normalized_size(&self) -> Vector2<f32> {
-        self.texture_region.normalized_size()
-    }
-
-    pub fn texture_coordinates(&self) -> [[f32; 2]; 4] {
-        self.texture_region.texture_coordinates()
+    fn mut_texture_region(&mut self) -> &mut TextureRegion {
+        &mut self.texture_region
     }
 }

@@ -3,10 +3,12 @@ extern crate cgmath;
 extern crate glium;
 extern crate glium_sdl2;
 extern crate image;
+extern crate moving_average;
 extern crate sdl2;
 
 pub use glium::{Surface, Texture2d};
 pub use glium::uniforms::MagnifySamplerFilter;
+use moving_average::MovingAverage;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
@@ -62,6 +64,7 @@ impl<T: App> MidgarApp<T> {
         while !window_closed && !self.midgar.should_exit() {
             let start_time = Instant::now();
             self.midgar.time.update();
+            self.midgar.delta_times.add(self.midgar.time.delta_time());
 
             self.midgar.input.begin_frame();
 
@@ -135,6 +138,8 @@ impl<T: App> MidgarApp<T> {
 
             // Get how long this frame took.
             let time_elapsed = start_time.elapsed();
+            // Add it to frame times.
+            self.midgar.frame_times.add(Time::duration_as_f64(time_elapsed));
             // Sleep for the rest of the remaining frame time.
             if time_elapsed < self.frame_time {
                 thread::sleep(self.frame_time - time_elapsed);
@@ -150,6 +155,9 @@ pub struct Midgar {
     time: Time,
     graphics: Graphics,
     input: Input,
+
+    frame_times: MovingAverage<f64>,
+    delta_times: MovingAverage<f64>,
     should_exit: bool,
 }
 
@@ -164,6 +172,9 @@ impl Midgar {
             time: Time::new(),
             graphics: graphics,
             input: input,
+
+            frame_times: MovingAverage::new(200),
+            delta_times: MovingAverage::new(200),
             should_exit: false,
         }
     }
@@ -178,6 +189,14 @@ impl Midgar {
 
     pub fn input(&self) -> &Input {
         &self.input
+    }
+
+    pub fn frame_time(&self) -> f64 {
+        self.frame_times.average()
+    }
+
+    pub fn fps(&self) -> f64 {
+        1.0 / self.delta_times.average()
     }
 
     pub fn set_should_exit(&mut self) {

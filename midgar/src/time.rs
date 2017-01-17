@@ -26,6 +26,10 @@ impl Time {
     }
 
     pub fn delta_time(&self) -> f64 {
-        self.delta_time.as_secs() as f64 + (self.delta_time.subsec_nanos() as f64 / 1_000_000_000.0)
+        Self::duration_as_f64(self.delta_time)
+    }
+
+    pub fn duration_as_f64(duration: Duration) -> f64 {
+        duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1_000_000_000.0)
     }
 }

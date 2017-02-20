@@ -7,8 +7,8 @@ use glium::{self, Surface};
 use super::texture_region::{TextureRegion, TextureRegionHolder};
 
 
-const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs");
-const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs");
+const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs.glsl");
+const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs.glsl");
 
 const QUAD_SIZE: usize = 6;
 

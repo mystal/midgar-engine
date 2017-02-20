@@ -3,8 +3,8 @@ use cgmath::prelude::*;
 use glium::{self, Surface};
 
 
-const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs");
-const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/shape.fs");
+const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs.glsl");
+const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/shape.fs.glsl");
 
 const QUAD_SIZE: usize = 6;
 

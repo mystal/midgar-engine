@@ -5,6 +5,7 @@ extern crate glium_sdl2;
 extern crate image;
 extern crate maybe_owned;
 extern crate moving_average;
+extern crate rusttype;
 extern crate sdl2;
 
 pub use glium::{Surface, Texture2d};

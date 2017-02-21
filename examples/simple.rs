@@ -5,11 +5,15 @@ use std::rc::Rc;
 
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
+use midgar::graphics::text::{self, Font, TextRenderer};
 
 pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
+    text_renderer: TextRenderer,
     sprite: Sprite<'a>,
+    font: Font<'a>,
     projection: cgmath::Matrix4<f32>,
+    text_projection: cgmath::Matrix4<f32>,
 
     play: bool,
 }
@@ -27,11 +31,15 @@ impl<'a> App for GameApp<'a> {
 
         let (screen_width, screen_height) = midgar.graphics().screen_size();
         let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
+        let text_projection = cgmath::ortho(0.0, screen_width as f32, screen_height as f32, 0.0, -1.0, 1.0);
 
         GameApp {
             sprite_renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
+            text_renderer: TextRenderer::new(midgar.graphics().display()),
             sprite: sprite,
-            projection: projection,
+            font: text::load_font_from_path("assets/VeraMono.ttf"),
+            projection,
+            text_projection,
             play: false,
         }
     }
@@ -63,6 +71,9 @@ impl<'a> App for GameApp<'a> {
         let mut target = midgar.graphics().display().draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         self.sprite_renderer.draw(&self.sprite, draw_params, &mut target);
+        // TODO: Fix text rendering so it doesn't require a separate projection matrix?
+        self.text_renderer.draw_text("Testing!\n1, 2, 3, testing!", &self.font, [1.0, 1.0, 1.0],
+                                     20, 100.0, 100.0, 300, &self.text_projection, &mut target);
         target.finish().unwrap();
     }
 

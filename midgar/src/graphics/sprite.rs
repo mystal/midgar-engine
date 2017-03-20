@@ -22,13 +22,14 @@ implement_vertex!(Vertex, vertex);
 
 
 pub struct SpriteRenderer {
-    // TODO: Store projection matrix here?
+    projection_matrix: Matrix4<f32>,
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
 }
 
 impl SpriteRenderer {
-    pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
+    // TODO: Create a builder for SpriteRenderer.
+    pub fn new<F: glium::backend::Facade>(display: &F, projection: Matrix4<f32>) -> Self {
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
             vertex_shader: VERTEX_SHADER_SRC,
@@ -42,23 +43,27 @@ impl SpriteRenderer {
         };
         let shader = glium::Program::new(display, program_creation_input).unwrap();
 
-        Self::with_shader(display, shader)
+        Self::with_shader(display, shader, projection)
     }
 
-    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program) -> Self {
+    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program,
+                                                  projection: Matrix4<f32>) -> Self {
         // TODO: Evaluate other types of buffers.
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(display, QUAD_SIZE).unwrap();
 
         SpriteRenderer {
+            projection_matrix: projection,
             shader: shader,
             vertex_buffer: vertex_buffer,
         }
     }
 
+    // TODO: Add a begin_batch method that creates the batched renderer.
+
     pub fn draw_region<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
-                                   width: f32, height: f32, projection: &Matrix4<f32>,
+                                   width: f32, height: f32,
                                    target: &mut S) {
-        self.draw_region_with_rotation(region, x, y, 0.0, width, height, projection, target);
+        self.draw_region_with_rotation(region, x, y, 0.0, width, height, target);
     }
 
     // TODO: Pull out common drawing logic.
@@ -67,7 +72,7 @@ impl SpriteRenderer {
     // something.
     pub fn draw_region_with_rotation<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
                                                  rotation: f32, width: f32, height: f32,
-                                                 projection: &Matrix4<f32>, target: &mut S) {
+                                                 target: &mut S) {
         // TODO: Cache model in sprite?
         let position = cgmath::vec2(x, y);
         let model = {
@@ -123,7 +128,7 @@ impl SpriteRenderer {
             spriteColor: color,
             model: cgmath::conv::array4x4(model),
             view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(*projection),
+            projection: cgmath::conv::array4x4(self.projection_matrix),
         };
 
         // Set alpha blending from sprite.
@@ -140,8 +145,7 @@ impl SpriteRenderer {
         target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
     }
 
-    pub fn draw_sprite<S: Surface>(&self, sprite: &Sprite, projection: &Matrix4<f32>,
-                                   target: &mut S) {
+    pub fn draw_sprite<S: Surface>(&self, sprite: &Sprite, target: &mut S) {
         // TODO: Cache model in sprite?
         let model = {
             let scaled_size = sprite.size().cast::<f32>().mul_element_wise(sprite.scale);
@@ -191,7 +195,7 @@ impl SpriteRenderer {
             spriteColor: cgmath::conv::array3(sprite.color),
             model: cgmath::conv::array4x4(model),
             view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(*projection),
+            projection: cgmath::conv::array4x4(self.projection_matrix),
         };
 
         // Set alpha blending from sprite.
@@ -206,6 +210,14 @@ impl SpriteRenderer {
         };
 
         target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
+    }
+
+    pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {
+        self.projection_matrix = projection;
+    }
+
+    pub fn get_projection_matrix(&self) -> Matrix4<f32> {
+        self.projection_matrix
     }
 }
 

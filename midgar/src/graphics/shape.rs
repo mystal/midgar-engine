@@ -17,12 +17,14 @@ implement_vertex!(Vertex, vertex);
 
 
 pub struct ShapeRenderer {
+    projection_matrix: Matrix4<f32>,
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
 }
 
 impl ShapeRenderer {
-    pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
+    // TODO: Create a builder for ShapeRenderer.
+    pub fn new<F: glium::backend::Facade>(display: &F, projection: Matrix4<f32>) -> Self {
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
             vertex_shader: VERTEX_SHADER_SRC,
@@ -36,22 +38,26 @@ impl ShapeRenderer {
         };
         let shader = glium::Program::new(display, program_creation_input).unwrap();
 
-        Self::with_shader(display, shader)
+        Self::with_shader(display, shader, projection)
     }
 
-    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program) -> Self {
+    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program,
+                                                  projection: Matrix4<f32>) -> Self {
         // TODO: Evaluate other types of buffers.
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(display, QUAD_SIZE).unwrap();
 
         ShapeRenderer {
+            projection_matrix: projection,
             shader: shader,
             vertex_buffer: vertex_buffer,
         }
     }
 
+    // TODO: Add a begin_batch method that creates the batched renderer for a certain shape?
+
     // TODO: Pull out common drawing logic.
     pub fn draw_filled_rect<S: Surface>(&self, x: f32, y: f32, width: f32, height: f32,
-                                        color: [f32; 3], projection: &Matrix4<f32>, target: &mut S) {
+                                        color: [f32; 3], target: &mut S) {
         // TODO: Cache model in sprite?
         let scale = 1.0f32;
         let position = cgmath::vec2(x, y);
@@ -91,7 +97,7 @@ impl ShapeRenderer {
             shapeColor: color,
             model: cgmath::conv::array4x4(model),
             view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(*projection),
+            projection: cgmath::conv::array4x4(self.projection_matrix),
         };
 
         // TODO: Let user specify alpha blending.
@@ -102,5 +108,13 @@ impl ShapeRenderer {
         };
 
         target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
+    }
+
+    pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {
+        self.projection_matrix = projection;
+    }
+
+    pub fn get_projection_matrix(&self) -> Matrix4<f32> {
+        self.projection_matrix
     }
 }

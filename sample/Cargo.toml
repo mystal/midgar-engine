@@ -1,5 +1,5 @@
 [package]
-name = "midgar_sample"
+name = "midgar-sample"
 version = "0.1.0"
 authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 

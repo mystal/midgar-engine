@@ -78,13 +78,16 @@ impl SpriteRenderer {
         let model = {
             let scaled_size = region.scaled_size();
             let translate = Matrix4::from_translation(position.extend(0.0));
-            let rotate_angle = cgmath::Deg(rotation);
-            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-            // FIXME: Rotate around Sprite's origin
-            let rotate =
-                Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
-                rotate_rotation *
-                Matrix4::from_translation(cgmath::vec3(-0.5 * scaled_size.x, -0.5 * scaled_size.y, 0.0));
+            let rotate = if rotation != 0.0 {
+                let rotate_angle = cgmath::Deg(rotation);
+                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
+                let origin = cgmath::vec2(0.5, 0.5);
+                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
+                    rotate_rotation *
+                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
+            } else {
+                Matrix4::identity()
+            };
             let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
             translate * rotate * scale
         };
@@ -150,13 +153,16 @@ impl SpriteRenderer {
         let model = {
             let scaled_size = sprite.size().cast::<f32>().mul_element_wise(sprite.scale);
             let translate = Matrix4::from_translation(sprite.position.cast::<f32>().extend(0.0));
-            let rotate_angle = cgmath::Deg(sprite.rotation);
-            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-            // FIXME: Rotate around Sprite's origin
-            let rotate =
-                Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
-                rotate_rotation *
-                Matrix4::from_translation(cgmath::vec3(-0.5 * scaled_size.x, -0.5 * scaled_size.y, 0.0));
+            let rotate = if sprite.rotation != 0.0 {
+                let rotate_angle = cgmath::Deg(sprite.rotation);
+                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
+                let origin = sprite.origin();
+                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
+                    rotate_rotation *
+                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
+            } else {
+                Matrix4::identity()
+            };
             let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
             translate * rotate * scale
         };
@@ -234,14 +240,12 @@ pub struct Sprite {
 impl Sprite {
     pub fn new(texture: Rc<glium::Texture2d>) -> Self {
         let texture_region = TextureRegion::new(texture);
-        let origin = cgmath::vec2(texture_region.texture_size().x as f32 / 2.0,
-                                  texture_region.texture_size().y as f32 / 2.0);
 
         Sprite {
             texture_region: texture_region,
 
             position: cgmath::vec2(0.0, 0.0),
-            origin: origin,
+            origin: cgmath::vec2(0.5, 0.5),
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
@@ -250,13 +254,12 @@ impl Sprite {
 
     pub fn with_sub_field(texture: Rc<glium::Texture2d>, offset: (u32, u32), size: (u32, u32)) -> Self {
         let texture_region = TextureRegion::with_sub_field(texture, offset, size);
-        let origin = texture_region.offset().cast::<f32>() + (texture_region.size().cast::<f32>() / 2.0);
 
         Sprite {
             texture_region: texture_region,
 
             position: cgmath::vec2(0.0, 0.0),
-            origin: origin,
+            origin: cgmath::vec2(0.5, 0.5),
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
@@ -269,6 +272,15 @@ impl Sprite {
 
     pub fn position(&self) -> Vector2<f32> {
         self.position
+    }
+
+    pub fn set_origin(&mut self, origin: Vector2<f32>) {
+        // FIXME: Clamp each dimension between 0 and 1.
+        self.origin = origin;
+    }
+
+    pub fn origin(&self) -> Vector2<f32> {
+        self.origin
     }
 
     pub fn set_rotation(&mut self, rotation: f32) {
@@ -292,6 +304,7 @@ impl Sprite {
     }
 
     pub fn set_color(&mut self, color: Vector3<f32>) {
+        // FIXME: Either clamp between 0 and 1, or use u8. Probably use our own color struct.
         self.color = color;
     }
 

@@ -10,14 +10,15 @@ use super::texture_region::{TextureRegion, TextureRegionHolder};
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs.glsl");
 const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs.glsl");
 
-const QUAD_SIZE: usize = 6;
+const QUAD_VERTEX_SIZE: usize = 4;
+const QUAD_INDEX_SIZE: usize = 6;
+const BATCH_SIZE: usize = 1024;
 
 
 #[derive(Clone, Copy)]
 struct Vertex {
     vertex: [f32; 4],
 }
-
 implement_vertex!(Vertex, vertex);
 
 
@@ -25,6 +26,7 @@ pub struct SpriteRenderer {
     projection_matrix: Matrix4<f32>,
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
+    index_buffer: glium::IndexBuffer<u16>,
 }
 
 impl SpriteRenderer {
@@ -49,12 +51,31 @@ impl SpriteRenderer {
     pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program,
                                                   projection: Matrix4<f32>) -> Self {
         // TODO: Evaluate other types of buffers.
-        let vertex_buffer = glium::VertexBuffer::empty_dynamic(display, QUAD_SIZE).unwrap();
+        let vertex_buffer = glium::VertexBuffer::empty_dynamic(
+            display,
+            QUAD_VERTEX_SIZE * BATCH_SIZE,
+        ).unwrap();
+
+        let mut indices = Vec::with_capacity(QUAD_INDEX_SIZE * BATCH_SIZE);
+        for quad_index in 0..BATCH_SIZE {
+            let offset = quad_index as u16 * QUAD_VERTEX_SIZE as u16;
+            let new_indices = [
+                0 + offset, 1 + offset, 2 + offset,
+                0 + offset, 2 + offset, 3 + offset,
+            ];
+            indices.extend_from_slice(&new_indices);
+        }
+        let index_buffer = glium::IndexBuffer::immutable(
+            display,
+            glium::index::PrimitiveType::TrianglesList,
+            &indices,
+        ).unwrap();
 
         SpriteRenderer {
             projection_matrix: projection,
             shader: shader,
             vertex_buffer: vertex_buffer,
+            index_buffer: index_buffer,
         }
     }
 
@@ -104,19 +125,15 @@ impl SpriteRenderer {
 
         let vertices = &[
             Vertex { vertex: [0.0, normalized_height, top_left[0], top_left[1]] },
-            Vertex { vertex: [normalized_width, 0.0, bottom_right[0], bottom_right[1]] },
-            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
-            Vertex { vertex: [0.0, normalized_height, top_left[0], top_left[1]] },
             Vertex { vertex: [normalized_width, normalized_height, top_right[0], top_right[1]] },
             Vertex { vertex: [normalized_width, 0.0, bottom_right[0], bottom_right[1]] },
+            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
         ];
         // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
         // vertex data each time you go to draw. So copy the data to the vertex buffer here!
-        self.vertex_buffer.write(vertices);
-
-        // FIXME: We want to use indexed vertices to pass in 4 vertices instead of 6.
-        //let indices = [0, 1, 2, 0, 2, 3];
-        let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        let mut vertex_buffer = self.vertex_buffer.slice(0..QUAD_VERTEX_SIZE)
+            .expect("Vertex buffer does not contain enough elements!");
+        vertex_buffer.write(vertices);
 
         let texture = if let Some(magnify_filter) = region.magnify_filter() {
             region.texture().sampled().magnify_filter(magnify_filter)
@@ -145,7 +162,10 @@ impl SpriteRenderer {
             .. Default::default()
         };
 
-        target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
+        let index_buffer = self.index_buffer.slice(0..QUAD_INDEX_SIZE)
+            .expect("Index buffer does not contain enough elements!");
+
+        target.draw(vertex_buffer, index_buffer, &self.shader, &uniforms, &params).unwrap();
     }
 
     pub fn draw_sprite<S: Surface>(&self, sprite: &Sprite, target: &mut S) {
@@ -176,19 +196,15 @@ impl SpriteRenderer {
 
         let vertices = &[
             Vertex { vertex: [0.0, 1.0, top_left[0], top_left[1]] },
-            Vertex { vertex: [1.0, 0.0, bottom_right[0], bottom_right[1]] },
-            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
-            Vertex { vertex: [0.0, 1.0, top_left[0], top_left[1]] },
             Vertex { vertex: [1.0, 1.0, top_right[0], top_right[1]] },
             Vertex { vertex: [1.0, 0.0, bottom_right[0], bottom_right[1]] },
+            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
         ];
         // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
         // vertex data each time you go to draw. So copy the data to the vertex buffer here!
-        self.vertex_buffer.write(vertices);
-
-        // FIXME: We want to use indexed vertices to pass in 4 vertices instead of 6.
-        //let indices = [0, 1, 2, 0, 2, 3];
-        let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        let mut vertex_buffer = self.vertex_buffer.slice(0..QUAD_VERTEX_SIZE)
+            .expect("Vertex buffer does not contain enough elements!");
+        vertex_buffer.write(vertices);
 
         let texture = if let Some(magnify_filter) = sprite.magnify_filter() {
             sprite.texture().sampled().magnify_filter(magnify_filter)
@@ -215,7 +231,10 @@ impl SpriteRenderer {
             .. Default::default()
         };
 
-        target.draw(&self.vertex_buffer, &index_buffer, &self.shader, &uniforms, &params).unwrap();
+        let index_buffer = self.index_buffer.slice(0..QUAD_INDEX_SIZE)
+            .expect("Index buffer does not contain enough elements!");
+
+        target.draw(vertex_buffer, index_buffer, &self.shader, &uniforms, &params).unwrap();
     }
 
     pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {

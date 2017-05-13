@@ -187,6 +187,10 @@ impl Midgar {
         &self.graphics
     }
 
+    pub fn graphics_mut(&mut self) -> &mut Graphics {
+        &mut self.graphics
+    }
+
     pub fn input(&self) -> &Input {
         &self.input
     }

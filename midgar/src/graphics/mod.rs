@@ -46,6 +46,11 @@ impl Graphics {
         }
     }
 
+    pub fn set_size(&mut self, width: u32, height: u32) {
+        self.display.window_mut().set_size(width, height)
+            .unwrap();
+    }
+
     pub fn display(&self) -> &SDL2Facade {
         &self.display
     }

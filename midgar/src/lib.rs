@@ -12,7 +12,7 @@ use moving_average::MovingAverage;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
-pub use input::{Axis, Button, KeyCode, Mouse};
+pub use input::{Axis, Button, KeyCode, MouseButton};
 
 use std::time::{
     Duration,
@@ -71,14 +71,14 @@ impl<T: App> MidgarApp<T> {
             // Respond to event updates
             for event in self.midgar.event_pump().poll_iter() {
                 use sdl2::event::Event::*;
-                use sdl2::event::WindowEventId;
+                use sdl2::event::WindowEvent;
                 match event {
                     Quit { .. } => window_closed = true,
 
                     // Window events.
-                    Window { win_event_id, data1, data2, .. } => {
-                        if win_event_id == WindowEventId::SizeChanged {
-                            resized = Some((data1 as u32, data2 as u32));
+                    Window { win_event, .. } => {
+                        if let WindowEvent::Resized(x, y) = win_event {
+                            resized = Some((x as u32, y as u32));
                         }
                     },
 

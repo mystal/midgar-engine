@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use sdl2;
 pub use sdl2::controller::{Axis, Button, GameController};
 pub use sdl2::keyboard::Keycode as KeyCode;
-pub use sdl2::mouse::Mouse;
+pub use sdl2::mouse::MouseButton;
 
 
 #[derive(Clone, Copy, Debug)]
@@ -38,15 +38,15 @@ impl Controller {
         self.axis_positions.get(&axis).cloned().unwrap_or(0)
     }
 
-    pub fn is_button_held(&self, button: &Button) -> bool {
-        self.held_buttons.contains(button)
+    pub fn is_button_held(&self, button: Button) -> bool {
+        self.held_buttons.contains(&button)
     }
 
-    pub fn was_button_pressed(&self, button: &Button) -> bool {
-        self.pressed_buttons.contains(button)
+    pub fn was_button_pressed(&self, button: Button) -> bool {
+        self.pressed_buttons.contains(&button)
     }
 
-    pub fn was_button_released(&self, button: &Button) -> bool {
+    pub fn was_button_released(&self, button: Button) -> bool {
         self.released_buttons.contains(&button)
     }
 
@@ -72,9 +72,9 @@ pub struct Input {
     pressed_keys: HashSet<KeyCode>,
     released_keys: HashSet<KeyCode>,
 
-    held_buttons: HashSet<Mouse>,
-    pressed_buttons: HashSet<Mouse>,
-    released_buttons: HashSet<Mouse>,
+    held_buttons: HashSet<MouseButton>,
+    pressed_buttons: HashSet<MouseButton>,
+    released_buttons: HashSet<MouseButton>,
     mouse_pos: (i32, i32),
     mouse_moved: bool,
 
@@ -114,27 +114,27 @@ impl Input {
         }
     }
 
-    pub fn is_key_held(&self, keycode: &KeyCode) -> bool {
-        self.held_keys.contains(keycode)
+    pub fn is_key_held(&self, keycode: KeyCode) -> bool {
+        self.held_keys.contains(&keycode)
     }
 
-    pub fn was_key_pressed(&self, keycode: &KeyCode) -> bool {
-        self.pressed_keys.contains(keycode)
+    pub fn was_key_pressed(&self, keycode: KeyCode) -> bool {
+        self.pressed_keys.contains(&keycode)
     }
 
-    pub fn was_key_released(&self, keycode: &KeyCode) -> bool {
+    pub fn was_key_released(&self, keycode: KeyCode) -> bool {
         self.released_keys.contains(&keycode)
     }
 
-    pub fn is_button_held(&self, button: &Mouse) -> bool {
-        self.held_buttons.contains(button)
+    pub fn is_button_held(&self, button: MouseButton) -> bool {
+        self.held_buttons.contains(&button)
     }
 
-    pub fn was_button_pressed(&self, button: &Mouse) -> bool {
-        self.pressed_buttons.contains(button)
+    pub fn was_button_pressed(&self, button: MouseButton) -> bool {
+        self.pressed_buttons.contains(&button)
     }
 
-    pub fn was_button_released(&self, button: &Mouse) -> bool {
+    pub fn was_button_released(&self, button: MouseButton) -> bool {
         self.released_buttons.contains(&button)
     }
 
@@ -171,7 +171,7 @@ impl Input {
     }
 
     // FIXME: This shouldn't be accessible outside the crate.
-    pub fn handle_mouse_input(&mut self, state: ElementState, button: Mouse) {
+    pub fn handle_mouse_input(&mut self, state: ElementState, button: MouseButton) {
         match state {
             ElementState::Pressed => self.press_button(button),
             ElementState::Released => self.release_button(button),
@@ -242,12 +242,12 @@ impl Input {
         self.released_keys.insert(keycode);
     }
 
-    fn press_button(&mut self, button: Mouse) {
+    fn press_button(&mut self, button: MouseButton) {
         self.held_buttons.insert(button);
         self.pressed_buttons.insert(button);
     }
 
-    fn release_button(&mut self, button: Mouse) {
+    fn release_button(&mut self, button: MouseButton) {
         self.held_buttons.remove(&button);
         self.released_buttons.insert(button);
     }

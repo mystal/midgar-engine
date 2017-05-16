@@ -1,8 +1,11 @@
+use std::borrow::Borrow;
 use std::rc::Rc;
+use std::thread;
 
 use cgmath::{self, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
-use glium::{self, Surface};
+use glium::{self, DrawError, GlObject, Surface};
+use glium::uniforms::{Sampler, SamplerBehavior};
 
 use super::texture_region::{TextureRegion, TextureRegionHolder};
 
@@ -13,20 +16,214 @@ const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs.glsl")
 const QUAD_VERTEX_SIZE: usize = 4;
 const QUAD_INDEX_SIZE: usize = 6;
 const BATCH_SIZE: usize = 1024;
+const BATCH_VERTEX_SIZE: usize = QUAD_VERTEX_SIZE * BATCH_SIZE;
+const BATCH_INDEX_SIZE: usize = QUAD_INDEX_SIZE * BATCH_SIZE;
 
 
 #[derive(Clone, Copy)]
-struct Vertex {
-    vertex: [f32; 4],
+struct VertexData {
+    pos: [f32; 2],
+    tex_coords: [f32; 2],
+    color: [f32; 3],
 }
-implement_vertex!(Vertex, vertex);
+implement_vertex!(VertexData, pos, tex_coords, color);
 
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SpriteDrawParams {
+    pub sampler_behavior: SamplerBehavior,
+    pub alpha_blending: bool,
+}
+
+pub struct SpriteBatch<'a, 'b, S>
+    where S: 'b + Surface
+{
+    renderer: &'a mut SpriteRenderer,
+    target: &'b mut S,
+    draw_params: SpriteDrawParams,
+    draw_calls: u32,
+    finished: bool,
+}
+
+impl<'a, 'b, S> SpriteBatch<'a, 'b, S>
+    where S: Surface
+{
+    // TODO: Take a builder that sets the draw options. Blend mode, texture options, etc. Draw
+    // state that will be used for the entire batch.
+    fn new(renderer: &'a mut SpriteRenderer, draw_params: SpriteDrawParams, target: &'b mut S) -> Self {
+        renderer.sprite_queue.clear();
+
+        SpriteBatch {
+            renderer: renderer,
+            target: target,
+            draw_params: draw_params,
+            draw_calls: 0,
+            finished: false,
+        }
+    }
+
+    pub fn draw(&mut self, sprite: &Sprite) -> Result<(), DrawError> {
+        if self.renderer.sprite_queue.len() == BATCH_SIZE {
+            self.flush()?;
+        }
+
+        // Queue the sprite data.
+        let vertices = sprite.get_vertex_data();
+        self.renderer.sprite_queue.push(vertices, sprite.rc_texture().clone());
+
+        Ok(())
+    }
+
+    pub fn finish(mut self) -> Result<u32, DrawError> {
+        self.flush()?;
+        self.finished = true;
+        Ok(self.draw_calls)
+    }
+
+    fn flush(&mut self) -> Result<(), DrawError> {
+        if self.renderer.sprite_queue.vertices.is_empty() {
+            return Ok(());
+        }
+
+        // Build draw parameters for the entire batch.
+        let params = {
+            let blend = if self.draw_params.alpha_blending {
+                glium::Blend::alpha_blending()
+            } else {
+                Default::default()
+            };
+            glium::DrawParameters {
+                blend: blend,
+                .. Default::default()
+            }
+        };
+
+        // TODO: If sorting sprites, do so before writing vertex data.
+        // Write vertex data to the vertex buffer.
+        {
+            let vertex_buffer = self.renderer.vertex_buffer.slice(0..self.renderer.sprite_queue.vertices.len())
+                .expect("Vertex buffer does not contain enough elements!");
+            vertex_buffer.write(&self.renderer.sprite_queue.vertices);
+        }
+
+        // TODO: Flush sprites based on their textures.
+        // TODO: Do a fold, using accumulator as previous texture ID and range? Use it to queue up flushes?
+        // TODO: Return ranges of sprites that all have same texture, use that to flush out each
+        // range.
+
+        let mut render_texture = self.renderer.sprite_queue.textures[0].clone();
+        let mut offset = 0;
+        for (i, texture) in self.renderer.sprite_queue.textures.iter().enumerate().skip(1) {
+            if texture.get_id() != render_texture.get_id() {
+                {
+                    let sampler: Sampler<glium::Texture2d> = glium::uniforms::Sampler(
+                        render_texture.borrow(),
+                        self.draw_params.sampler_behavior,
+                    );
+                    let uniforms = uniform! {
+                        image: sampler,
+                        projectionView: cgmath::conv::array4x4(self.renderer.projection_matrix),
+                    };
+
+                    // Draw the batch.
+                    let (vertex_start, vertex_end) = (offset * QUAD_VERTEX_SIZE, i * QUAD_VERTEX_SIZE);
+                    let vertex_buffer = self.renderer.vertex_buffer.slice(vertex_start..vertex_end)
+                        .expect("Vertex buffer does not contain enough elements!");
+                    let (index_start, index_end) = (offset * QUAD_INDEX_SIZE, i * QUAD_INDEX_SIZE);
+                    let index_buffer = self.renderer.index_buffer.slice(index_start..index_end)
+                        .expect("Index buffer does not contain enough elements!");
+
+                    self.target.draw(vertex_buffer, index_buffer, &self.renderer.shader, &uniforms, &params)?;
+                }
+
+                self.draw_calls += 1;
+
+                offset = i;
+                render_texture = texture.clone();
+            }
+        }
+
+        // Draw any final sprites.
+        {
+            let i = self.renderer.sprite_queue.len();
+
+            let sampler: Sampler<glium::Texture2d> = glium::uniforms::Sampler(
+                render_texture.borrow(),
+                self.draw_params.sampler_behavior,
+            );
+            let uniforms = uniform! {
+                image: sampler,
+                projectionView: cgmath::conv::array4x4(self.renderer.projection_matrix),
+            };
+
+            // Draw the batch.
+            let (vertex_start, vertex_end) = (offset * QUAD_VERTEX_SIZE, i * QUAD_VERTEX_SIZE);
+            let vertex_buffer = self.renderer.vertex_buffer.slice(vertex_start..vertex_end)
+                .expect("Vertex buffer does not contain enough elements!");
+            let (index_start, index_end) = (offset * QUAD_INDEX_SIZE, i * QUAD_INDEX_SIZE);
+            let index_buffer = self.renderer.index_buffer.slice(index_start..index_end)
+                .expect("Index buffer does not contain enough elements!");
+
+            self.target.draw(vertex_buffer, index_buffer, &self.renderer.shader, &uniforms, &params)?;
+
+            self.draw_calls += 1;
+        }
+
+        // All sprites have been flushed, so clear out the queue.
+        self.renderer.sprite_queue.clear();
+
+        Ok(())
+    }
+}
+
+impl<'a, 'b, S> Drop for SpriteBatch<'a, 'b, S>
+    where S: Surface
+{
+    #[inline]
+    fn drop(&mut self) {
+        if !thread::panicking() {
+            assert!(self.finished, "The `SpriteBatch` object must be explicitly destroyed \
+                                    by calling `.finish()`");
+        }
+    }
+}
+
+pub struct SpriteQueue {
+    vertices: Vec<VertexData>,
+    textures: Vec<Rc<glium::Texture2d>>,
+}
+
+impl SpriteQueue {
+    fn new() -> Self {
+        SpriteQueue {
+            vertices: Vec::with_capacity(BATCH_VERTEX_SIZE),
+            textures: Vec::with_capacity(BATCH_SIZE),
+        }
+    }
+
+    fn push(&mut self, vertices: [VertexData; 4], texture: Rc<glium::Texture2d>) {
+        assert!(self.textures.len() < BATCH_SIZE, "Sprite queue is full!");
+
+        self.vertices.extend_from_slice(&vertices);
+        self.textures.push(texture);
+    }
+
+    fn clear(&mut self) {
+        self.vertices.clear();
+        self.textures.clear();
+    }
+
+    fn len(&self) -> usize {
+        self.textures.len()
+    }
+}
 
 pub struct SpriteRenderer {
     projection_matrix: Matrix4<f32>,
     shader: glium::Program,
-    vertex_buffer: glium::VertexBuffer<Vertex>,
+    vertex_buffer: glium::VertexBuffer<VertexData>,
     index_buffer: glium::IndexBuffer<u16>,
+    sprite_queue: SpriteQueue,
 }
 
 impl SpriteRenderer {
@@ -53,10 +250,10 @@ impl SpriteRenderer {
         // TODO: Evaluate other types of buffers.
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(
             display,
-            QUAD_VERTEX_SIZE * BATCH_SIZE,
+            BATCH_VERTEX_SIZE,
         ).unwrap();
 
-        let mut indices = Vec::with_capacity(QUAD_INDEX_SIZE * BATCH_SIZE);
+        let mut indices = Vec::with_capacity(BATCH_INDEX_SIZE);
         for quad_index in 0..BATCH_SIZE {
             let offset = quad_index as u16 * QUAD_VERTEX_SIZE as u16;
             let new_indices = [
@@ -76,152 +273,33 @@ impl SpriteRenderer {
             shader: shader,
             vertex_buffer: vertex_buffer,
             index_buffer: index_buffer,
+            sprite_queue: SpriteQueue::new(),
         }
     }
 
-    // TODO: Add a begin_batch method that creates the batched renderer.
-
-    pub fn draw_region<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
-                                   width: f32, height: f32,
-                                   target: &mut S) {
-        self.draw_region_with_rotation(region, x, y, 0.0, width, height, target);
+    pub fn begin_batch<'a, 'b, S: Surface>(&'a mut self, draw_params: SpriteDrawParams, target: &'b mut S) -> SpriteBatch<'a, 'b, S> {
+        SpriteBatch::new(self, draw_params, target)
     }
 
-    // TODO: Pull out common drawing logic.
-    // TODO: Instead of having "with_rotation", pass a Transform structure that can scale and
-    // rotate (and position?) the region. And it implements Default, or you can pass None or
-    // something.
-    pub fn draw_region_with_rotation<S: Surface>(&self, region: &TextureRegion, x: f32, y: f32,
-                                                 rotation: f32, width: f32, height: f32,
-                                                 target: &mut S) {
-        // TODO: Cache model in sprite?
-        let position = cgmath::vec2(x, y);
-        let model = {
-            let scaled_size = region.scaled_size();
-            let translate = Matrix4::from_translation(position.extend(0.0));
-            let rotate = if rotation != 0.0 {
-                let rotate_angle = cgmath::Deg(rotation);
-                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-                let origin = cgmath::vec2(0.5, 0.5);
-                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
-                    rotate_rotation *
-                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
-            } else {
-                Matrix4::identity()
-            };
-            let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
-            translate * rotate * scale
-        };
+    pub fn draw<S: Surface>(&self, sprite: &Sprite, draw_params: SpriteDrawParams, target: &mut S) {
+        let vertices = sprite.get_vertex_data();
 
-        let tex_coords = region.texture_coordinates();
-
-        let top_left = tex_coords[0];
-        let top_right = tex_coords[1];
-        let bottom_left = tex_coords[2];
-        let bottom_right = tex_coords[3];
-
-        let normalized_width = width / region.size().x as f32;
-        let normalized_height = height / region.size().y as f32;
-
-        let vertices = &[
-            Vertex { vertex: [0.0, normalized_height, top_left[0], top_left[1]] },
-            Vertex { vertex: [normalized_width, normalized_height, top_right[0], top_right[1]] },
-            Vertex { vertex: [normalized_width, 0.0, bottom_right[0], bottom_right[1]] },
-            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
-        ];
-        // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
-        // vertex data each time you go to draw. So copy the data to the vertex buffer here!
-        let mut vertex_buffer = self.vertex_buffer.slice(0..QUAD_VERTEX_SIZE)
+        // Copy the data to the vertex buffer here for immediate rendering.
+        let vertex_buffer = self.vertex_buffer.slice(0..QUAD_VERTEX_SIZE)
             .expect("Vertex buffer does not contain enough elements!");
-        vertex_buffer.write(vertices);
+        vertex_buffer.write(&vertices);
 
-        let texture = if let Some(magnify_filter) = region.magnify_filter() {
-            region.texture().sampled().magnify_filter(magnify_filter)
-        } else {
-            region.texture().sampled()
-        };
-
-        // TODO: Let user specify color.
-        let color = [1.0f32, 1.0, 1.0];
-        let uniforms = uniform! {
-            image: texture,
-            spriteColor: color,
-            model: cgmath::conv::array4x4(model),
-            view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(self.projection_matrix),
-        };
-
-        // Set alpha blending from sprite.
-        let blend = if region.alpha() {
-            glium::Blend::alpha_blending()
-        } else {
-            Default::default()
-        };
-        let params = glium::DrawParameters {
-            blend: blend,
-            .. Default::default()
-        };
-
-        let index_buffer = self.index_buffer.slice(0..QUAD_INDEX_SIZE)
-            .expect("Index buffer does not contain enough elements!");
-
-        target.draw(vertex_buffer, index_buffer, &self.shader, &uniforms, &params).unwrap();
-    }
-
-    pub fn draw_sprite<S: Surface>(&self, sprite: &Sprite, target: &mut S) {
-        // TODO: Cache model in sprite?
-        let model = {
-            let scaled_size = sprite.size().cast::<f32>().mul_element_wise(sprite.scale);
-            let translate = Matrix4::from_translation(sprite.position.cast::<f32>().extend(0.0));
-            let rotate = if sprite.rotation != 0.0 {
-                let rotate_angle = cgmath::Deg(sprite.rotation);
-                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-                let origin = sprite.origin();
-                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
-                    rotate_rotation *
-                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
-            } else {
-                Matrix4::identity()
-            };
-            let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
-            translate * rotate * scale
-        };
-
-        let tex_coords = sprite.texture_coordinates();
-
-        let top_left = tex_coords[0];
-        let top_right = tex_coords[1];
-        let bottom_left = tex_coords[2];
-        let bottom_right = tex_coords[3];
-
-        let vertices = &[
-            Vertex { vertex: [0.0, 1.0, top_left[0], top_left[1]] },
-            Vertex { vertex: [1.0, 1.0, top_right[0], top_right[1]] },
-            Vertex { vertex: [1.0, 0.0, bottom_right[0], bottom_right[1]] },
-            Vertex { vertex: [0.0, 0.0, bottom_left[0], bottom_left[1]] },
-        ];
-        // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
-        // vertex data each time you go to draw. So copy the data to the vertex buffer here!
-        let mut vertex_buffer = self.vertex_buffer.slice(0..QUAD_VERTEX_SIZE)
-            .expect("Vertex buffer does not contain enough elements!");
-        vertex_buffer.write(vertices);
-
-        let texture = if let Some(magnify_filter) = sprite.magnify_filter() {
-            sprite.texture().sampled().magnify_filter(magnify_filter)
-        } else {
-            sprite.texture().sampled()
-        };
+        let sampler: Sampler<glium::Texture2d> = glium::uniforms::Sampler(
+            sprite.texture(),
+            draw_params.sampler_behavior,
+        );
 
         let uniforms = uniform! {
-            image: texture,
-            spriteColor: cgmath::conv::array3(sprite.color),
-            model: cgmath::conv::array4x4(model),
-            view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(self.projection_matrix),
+            image: sampler,
+            projectionView: cgmath::conv::array4x4(self.projection_matrix),
         };
 
-        // Set alpha blending from sprite.
-        let blend = if sprite.alpha() {
+        let blend = if draw_params.alpha_blending {
             glium::Blend::alpha_blending()
         } else {
             Default::default()
@@ -254,26 +332,22 @@ pub struct Sprite {
     rotation: f32,
     scale: Vector2<f32>,
     color: Vector3<f32>,
+    flip_x: bool,
+    flip_y: bool,
 }
 
 impl Sprite {
     pub fn new(texture: Rc<glium::Texture2d>) -> Self {
         let texture_region = TextureRegion::new(texture);
-
-        Sprite {
-            texture_region: texture_region,
-
-            position: cgmath::vec2(0.0, 0.0),
-            origin: cgmath::vec2(0.5, 0.5),
-            rotation: 0.0,
-            scale: cgmath::vec2(1.0, 1.0),
-            color: cgmath::vec3(1.0, 1.0, 1.0),
-        }
+        Sprite::from_texture_region(texture_region)
     }
 
     pub fn with_sub_field(texture: Rc<glium::Texture2d>, offset: (u32, u32), size: (u32, u32)) -> Self {
         let texture_region = TextureRegion::with_sub_field(texture, offset, size);
+        Sprite::from_texture_region(texture_region)
+    }
 
+    pub fn from_texture_region(texture_region: TextureRegion) -> Self {
         Sprite {
             texture_region: texture_region,
 
@@ -282,6 +356,8 @@ impl Sprite {
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
+            flip_x: false,
+            flip_y: false,
         }
     }
 
@@ -322,6 +398,26 @@ impl Sprite {
         self.scale
     }
 
+    //pub fn scaled_size(&self) -> Vector2<f32> {
+    //    self.size.cast::<f32>().mul_element_wise(self.scale)
+    //}
+
+    pub fn set_flip_x(&mut self, flip_x: bool) {
+        self.flip_x = flip_x;
+    }
+
+    pub fn flip_x(&mut self) -> bool {
+        self.flip_x
+    }
+
+    pub fn set_flip_y(&mut self, flip_y: bool) {
+        self.flip_y = flip_y;
+    }
+
+    pub fn flip_y(&mut self) -> bool {
+        self.flip_y
+    }
+
     pub fn set_color(&mut self, color: Vector3<f32>) {
         // FIXME: Either clamp between 0 and 1, or use u8. Probably use our own color struct.
         self.color = color;
@@ -329,6 +425,65 @@ impl Sprite {
 
     pub fn color(&self) -> Vector3<f32> {
         self.color
+    }
+
+    fn get_vertex_data(&self) -> [VertexData; 4] {
+        // TODO: Cache model matrix in the sprite?
+        // Compute model matrix.
+        let model = {
+            let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale);
+            let translate = Matrix4::from_translation(self.position.cast::<f32>().extend(0.0));
+            let rotate = if self.rotation != 0.0 {
+                let rotate_angle = cgmath::Deg(self.rotation);
+                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
+                let origin = self.origin();
+                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
+                    rotate_rotation *
+                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
+            } else {
+                Matrix4::identity()
+            };
+            let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
+            translate * rotate * scale
+        };
+
+        // Get texture coordinates.
+        let tex_coords = self.texture_coordinates();
+
+        let tex_top_left = tex_coords[0];
+        let tex_top_right = tex_coords[1];
+        let tex_bottom_left = tex_coords[2];
+        let tex_bottom_right = tex_coords[3];
+
+        // Flip texture coordinates if necessary.
+        let (tex_top_left, tex_top_right, tex_bottom_left, tex_bottom_right) = match (self.flip_x, self.flip_y) {
+            (false, false) => (tex_top_left, tex_top_right, tex_bottom_left, tex_bottom_right),
+            (true, false) => (tex_top_right, tex_top_left, tex_bottom_right, tex_bottom_left),
+            (false, true) => (tex_bottom_left, tex_bottom_right, tex_top_left, tex_top_right),
+            (true, true) => (tex_bottom_right, tex_bottom_left, tex_top_right, tex_top_left),
+        };
+
+        // Transform vertices with the model matrix.
+        // TODO: Have a const 4x4 matrix with the coordinates and simply multiply it with the
+        // model. Then take slices to put into vertex data.
+        let pos_top_left = model * cgmath::vec4(0.0, 1.0, 0.0, 1.0);
+        let pos_top_right = model * cgmath::vec4(1.0, 1.0, 0.0, 1.0);
+        let pos_bottom_left = model * cgmath::vec4(1.0, 0.0, 0.0, 1.0);
+        let pos_bottom_right = model * cgmath::vec4(0.0, 0.0, 0.0, 1.0);
+
+        let pos_top_left = [pos_top_left.x, pos_top_left.y];
+        let pos_top_right = [pos_top_right.x, pos_top_right.y];
+        let pos_bottom_left = [pos_bottom_left.x, pos_bottom_left.y];
+        let pos_bottom_right = [pos_bottom_right.x, pos_bottom_right.y];
+
+        let color = cgmath::conv::array3(self.color);
+
+        [
+            VertexData { pos: pos_top_left, tex_coords: tex_top_left, color: color },
+            VertexData { pos: pos_top_right, tex_coords: tex_top_right, color: color },
+            VertexData { pos: pos_bottom_left, tex_coords: tex_bottom_right, color: color },
+            VertexData { pos: pos_bottom_right, tex_coords: tex_bottom_left, color: color },
+        ]
     }
 }
 

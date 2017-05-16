@@ -1,14 +1,17 @@
 #version 330 core
 
-layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec2 tex_coords;
+layout (location = 2) in vec3 color;
 
 out vec2 texCoords;
+out vec3 spriteColor;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+// The combined projection/view matrix.
+uniform mat4 projectionView;
 
 void main() {
-    texCoords = vertex.zw;
-    gl_Position = projection * view * model * vec4(vertex.xy, 0.0, 1.0);
+    texCoords = tex_coords;
+    spriteColor = color;
+    gl_Position = projectionView * vec4(pos, 0.0, 1.0);
 }

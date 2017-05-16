@@ -2,7 +2,8 @@ use std::rc::Rc;
 
 use cgmath;
 use midgar::{App, Midgar, Surface, KeyCode};
-use midgar::graphics::sprite::{Sprite, SpriteRenderer};
+use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
+use midgar::graphics::texture_region::TextureRegionHolder;
 
 
 pub struct GameApp {
@@ -21,6 +22,8 @@ impl App for GameApp {
         sprite.set_position(cgmath::vec2(200.0, 200.0));
         sprite.set_color(cgmath::vec3(0.0, 1.0, 0.0));
         sprite.set_origin(cgmath::vec2(0.0, 0.0));
+        //sprite.set_flip_x(true);
+        sprite.set_flip_y(true);
 
         let (screen_width, screen_height) = midgar.graphics().screen_size();
         let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
@@ -29,17 +32,17 @@ impl App for GameApp {
             sprite_renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
             sprite: sprite,
             projection: projection,
-            play: true,
+            play: false,
         }
     }
 
     fn step(&mut self, midgar: &mut Midgar) {
-        if midgar.input().was_key_pressed(&KeyCode::Escape) {
+        if midgar.input().was_key_pressed(KeyCode::Escape) {
             midgar.set_should_exit();
             return;
         }
 
-        if midgar.input().was_key_pressed(&KeyCode::Space) {
+        if midgar.input().was_key_pressed(KeyCode::Space) {
             self.play = !self.play;
         }
 
@@ -51,10 +54,15 @@ impl App for GameApp {
             self.sprite.set_rotation(old_rotation + rotate_speed * dt);
         }
 
+        let draw_params = SpriteDrawParams {
+            alpha_blending: true,
+            .. Default::default()
+        };
+
         // TODO: Have draw be called on graphics
         let mut target = midgar.graphics().display().draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);
-        self.sprite_renderer.draw_sprite(&self.sprite, &mut target);
+        self.sprite_renderer.draw(&self.sprite, draw_params, &mut target);
         target.finish().unwrap();
     }
 

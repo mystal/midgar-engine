@@ -6,6 +6,7 @@ use cgmath::{self, Matrix4, Vector2, Vector3};
 use cgmath::prelude::*;
 use glium::{self, DrawError, GlObject, Surface};
 use glium::uniforms::{Sampler, SamplerBehavior};
+pub use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerWrapFunction};
 
 use super::texture_region::{TextureRegion, TextureRegionHolder};
 
@@ -33,6 +34,32 @@ implement_vertex!(VertexData, pos, tex_coords, color);
 pub struct SpriteDrawParams {
     pub sampler_behavior: SamplerBehavior,
     pub alpha_blending: bool,
+}
+
+impl SpriteDrawParams {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn alpha(mut self, alpha: bool) -> Self {
+        self.alpha_blending = alpha;
+        self
+    }
+
+    pub fn wrap_function(mut self, function: SamplerWrapFunction) -> Self {
+        self.sampler_behavior.wrap_function = (function, function, function);
+        self
+    }
+
+    pub fn minify_filter(mut self, filter: MinifySamplerFilter) -> Self {
+        self.sampler_behavior.minify_filter = filter;
+        self
+    }
+
+    pub fn magnify_filter(mut self, filter: MagnifySamplerFilter) -> Self {
+        self.sampler_behavior.magnify_filter = filter;
+        self
+    }
 }
 
 pub struct SpriteBatch<'a, 'b, S>

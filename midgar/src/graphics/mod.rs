@@ -10,7 +10,7 @@ use config::MidgarAppConfig;
 pub mod animation;
 pub mod shape;
 pub mod sprite;
-pub mod texture_region;
+pub mod texture;
 
 
 pub struct Graphics {

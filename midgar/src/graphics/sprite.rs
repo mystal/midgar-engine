@@ -7,8 +7,9 @@ use cgmath::prelude::*;
 use glium::{self, DrawError, GlObject, Surface};
 use glium::uniforms::{Sampler, SamplerBehavior};
 pub use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerWrapFunction};
+use maybe_owned::MaybeOwned;
 
-use super::texture_region::{TextureRegion, TextureRegionHolder};
+use graphics::texture::{TextureRegion, TextureRegionHolder};
 
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs.glsl");
@@ -22,13 +23,12 @@ const BATCH_INDEX_SIZE: usize = QUAD_INDEX_SIZE * BATCH_SIZE;
 
 
 #[derive(Clone, Copy)]
-struct VertexData {
+pub struct VertexData {
     pos: [f32; 2],
     tex_coords: [f32; 2],
     color: [f32; 3],
 }
 implement_vertex!(VertexData, pos, tex_coords, color);
-
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SpriteDrawParams {
@@ -351,8 +351,8 @@ impl SpriteRenderer {
     }
 }
 
-pub struct Sprite {
-    texture_region: TextureRegion,
+pub struct Sprite<'a> {
+    texture_region: MaybeOwned<'a, TextureRegion>,
 
     position: Vector2<f32>,
     origin: Vector2<f32>,
@@ -363,7 +363,7 @@ pub struct Sprite {
     flip_y: bool,
 }
 
-impl Sprite {
+impl<'a> Sprite<'a> {
     pub fn new(texture: Rc<glium::Texture2d>) -> Self {
         let texture_region = TextureRegion::new(texture);
         Sprite::from_texture_region(texture_region)
@@ -374,9 +374,11 @@ impl Sprite {
         Sprite::from_texture_region(texture_region)
     }
 
-    pub fn from_texture_region(texture_region: TextureRegion) -> Self {
+    pub fn from_texture_region<T>(texture_region: T) -> Self
+        where T: Into<MaybeOwned<'a, TextureRegion>>
+    {
         Sprite {
-            texture_region: texture_region,
+            texture_region: texture_region.into(),
 
             position: cgmath::vec2(0.0, 0.0),
             origin: cgmath::vec2(0.5, 0.5),
@@ -388,8 +390,9 @@ impl Sprite {
         }
     }
 
-    pub fn set_position(&mut self, position: Vector2<f32>) {
+    pub fn set_position(&mut self, position: Vector2<f32>) -> &mut Self {
         self.position = position;
+        self
     }
 
     pub fn position(&self) -> Vector2<f32> {
@@ -426,14 +429,14 @@ impl Sprite {
     }
 
     //pub fn scaled_size(&self) -> Vector2<f32> {
-    //    self.size.cast::<f32>().mul_element_wise(self.scale)
+    //    self.size().cast::<f32>().mul_element_wise(self.scale())
     //}
 
     pub fn set_flip_x(&mut self, flip_x: bool) {
         self.flip_x = flip_x;
     }
 
-    pub fn flip_x(&mut self) -> bool {
+    pub fn flip_x(&self) -> bool {
         self.flip_x
     }
 
@@ -441,7 +444,7 @@ impl Sprite {
         self.flip_y = flip_y;
     }
 
-    pub fn flip_y(&mut self) -> bool {
+    pub fn flip_y(&self) -> bool {
         self.flip_y
     }
 
@@ -455,13 +458,12 @@ impl Sprite {
     }
 
     fn get_vertex_data(&self) -> [VertexData; 4] {
-        // TODO: Cache model matrix in the sprite?
         // Compute model matrix.
         let model = {
-            let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale);
-            let translate = Matrix4::from_translation(self.position.cast::<f32>().extend(0.0));
-            let rotate = if self.rotation != 0.0 {
-                let rotate_angle = cgmath::Deg(self.rotation);
+            let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale());
+            let translate = Matrix4::from_translation(self.position().cast::<f32>().extend(0.0));
+            let rotate = if self.rotation() != 0.0 {
+                let rotate_angle = cgmath::Deg(self.rotation());
                 let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
                 let origin = self.origin();
                 Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
@@ -483,7 +485,7 @@ impl Sprite {
         let tex_bottom_right = tex_coords[3];
 
         // Flip texture coordinates if necessary.
-        let (tex_top_left, tex_top_right, tex_bottom_left, tex_bottom_right) = match (self.flip_x, self.flip_y) {
+        let (tex_top_left, tex_top_right, tex_bottom_left, tex_bottom_right) = match (self.flip_x(), self.flip_y()) {
             (false, false) => (tex_top_left, tex_top_right, tex_bottom_left, tex_bottom_right),
             (true, false) => (tex_top_right, tex_top_left, tex_bottom_right, tex_bottom_left),
             (false, true) => (tex_bottom_left, tex_bottom_right, tex_top_left, tex_top_right),
@@ -503,7 +505,7 @@ impl Sprite {
         let pos_bottom_left = [pos_bottom_left.x, pos_bottom_left.y];
         let pos_bottom_right = [pos_bottom_right.x, pos_bottom_right.y];
 
-        let color = cgmath::conv::array3(self.color);
+        let color = cgmath::conv::array3(self.color());
 
         [
             VertexData { pos: pos_top_left, tex_coords: tex_top_left, color: color },
@@ -514,12 +516,20 @@ impl Sprite {
     }
 }
 
-impl TextureRegionHolder for Sprite {
+impl<'a> TextureRegionHolder for Sprite<'a> {
     fn texture_region(&self) -> &TextureRegion {
         &self.texture_region
     }
+}
 
-    fn mut_texture_region(&mut self) -> &mut TextureRegion {
-        &mut self.texture_region
+pub trait DrawTexture {
+    fn draw(&self, x: f32, y: f32) -> Sprite;
+}
+
+impl DrawTexture for TextureRegion {
+    fn draw(&self, x: f32, y: f32) -> Sprite {
+        let mut sprite = Sprite::from_texture_region(self);
+        sprite.set_position(cgmath::vec2(x, y));
+        sprite
     }
 }

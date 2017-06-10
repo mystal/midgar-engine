@@ -5,15 +5,13 @@ use std::rc::Rc;
 
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
-use midgar::graphics::texture_region::{TextureRegion, TextureRegionHolder};
 
 // 10000 evenly spaced sprites, 100x100 grid.
 const GRID: (usize, usize) = (100, 100);
 
-pub struct GameApp {
+pub struct GameApp<'a> {
     renderer: SpriteRenderer,
-    //texture: TextureRegion,
-    sprite: Sprite,
+    sprite: Sprite<'a>,
     sprite_positions: Vec<(f32, f32)>,
     projection: cgmath::Matrix4<f32>,
 
@@ -21,11 +19,10 @@ pub struct GameApp {
     time_to_fps: f32,
 }
 
-impl App for GameApp {
+impl<'a> App for GameApp<'a> {
     fn create(midgar: &Midgar) -> Self {
         let texture = midgar.graphics().load_texture("../sample/assets/awesomeface.png", true);
         let texture = Rc::new(texture);
-        //let mut texture_region = TextureRegion::new(texture);
 
         let mut sprite = Sprite::new(texture);
         sprite.set_uniform_scale(0.05);
@@ -46,7 +43,6 @@ impl App for GameApp {
 
         GameApp {
             renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
-            //texture: texture_region,
             sprite: sprite,
             sprite_positions: sprite_positions,
             projection: projection,

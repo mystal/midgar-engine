@@ -3,18 +3,17 @@ use std::rc::Rc;
 use cgmath;
 use midgar::{App, Midgar, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
-use midgar::graphics::texture_region::TextureRegionHolder;
 
 
-pub struct GameApp {
+pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
-    sprite: Sprite,
+    sprite: Sprite<'a>,
     projection: cgmath::Matrix4<f32>,
 
     play: bool,
 }
 
-impl App for GameApp {
+impl<'a> App for GameApp<'a> {
     fn create(midgar: &Midgar) -> Self {
         let texture = midgar.graphics().load_texture("assets/awesomeface.png", true);
         let texture = Rc::new(texture);

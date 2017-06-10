@@ -220,6 +220,11 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "maybe-owned"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "midgar"
 version = "0.1.0"
 dependencies = [
@@ -227,6 +232,7 @@ dependencies = [
  "glium 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium_sdl2 0.14.0 (git+https://github.com/mystal/glium-sdl2?branch=dev)",
  "image 0.10.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "maybe-owned 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "moving-average 0.1.0 (git+https://github.com/mystal/moving-average)",
  "sdl2 0.29.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -427,6 +433,7 @@ dependencies = [
 "checksum libc 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)" = "044d1360593a78f5c8e5e710beccdc24ab71d1f01bc19a29bcacdba22e8475d8"
 "checksum log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "ab83497bf8bf4ed2a74259c1c802351fcd67a65baa86394b6ba73c36f4838054"
 "checksum lzw 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7d947cbb889ed21c2a84be6ffbaebf5b4e0f4340638cba0444907e38b56be084"
+"checksum maybe-owned 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e54ace753bdfdd8e64a86cc88ac0c1b14a4c1397aec851ba5f6e8004602b2181"
 "checksum miniz-sys 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "9d1f4d337a01c32e1f2122510fed46393d53ca35a7f429cb0450abaedfa3ed54"
 "checksum moving-average 0.1.0 (git+https://github.com/mystal/moving-average)" = "<none>"
 "checksum num 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)" = "bde7c03b09e7c6a301ee81f6ddf66d7a28ec305699e3d3b056d2fc56470e3120"

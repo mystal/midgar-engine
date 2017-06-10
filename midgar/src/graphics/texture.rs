@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 
 use cgmath::{self, Vector2};
-use glium::{self, Surface};
+use glium;
 
 
 #[derive(Clone)]
@@ -20,7 +20,7 @@ pub struct TextureRegion {
 
 impl TextureRegion {
     pub fn new(texture: Rc<glium::Texture2d>) -> Self {
-        let texture_size = texture.as_surface().get_dimensions();
+        let texture_size = texture.dimensions();
         let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
 
         TextureRegion {
@@ -37,7 +37,7 @@ impl TextureRegion {
     }
 
     pub fn with_sub_field(texture: Rc<glium::Texture2d>, offset: (u32, u32), size: (u32, u32)) -> Self {
-        let texture_size = texture.as_surface().get_dimensions();
+        let texture_size = texture.dimensions();
         let texture_size = cgmath::vec2(texture_size.0, texture_size.1);
 
         let offset = cgmath::vec2(offset.0, offset.1);
@@ -113,7 +113,6 @@ impl TextureRegion {
 
 pub trait TextureRegionHolder {
     fn texture_region(&self) -> &TextureRegion;
-    fn mut_texture_region(&mut self) -> &mut TextureRegion;
 
     fn texture(&self) -> &glium::Texture2d {
         self.texture_region().texture()
@@ -150,10 +149,6 @@ pub trait TextureRegionHolder {
 
 impl TextureRegionHolder for TextureRegion {
     fn texture_region(&self) -> &TextureRegion {
-        self
-    }
-
-    fn mut_texture_region(&mut self) -> &mut TextureRegion {
         self
     }
 }

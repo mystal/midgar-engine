@@ -3,11 +3,11 @@ extern crate cgmath;
 extern crate glium;
 extern crate glium_sdl2;
 extern crate image;
+extern crate maybe_owned;
 extern crate moving_average;
 extern crate sdl2;
 
 pub use glium::{Surface, Texture2d};
-pub use glium::uniforms::MagnifySamplerFilter;
 use moving_average::MovingAverage;
 
 pub use app::App;

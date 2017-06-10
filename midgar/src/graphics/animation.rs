@@ -3,7 +3,7 @@ use std::cmp;
 // use rand;
 // use rand::distributions::{IndependentSample, Range};
 
-use super::texture_region::TextureRegion;
+use graphics::texture::TextureRegion;
 
 
 pub enum PlayMode {

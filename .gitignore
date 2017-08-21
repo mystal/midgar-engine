@@ -1,4 +1,6 @@
+/Cargo.lock
+target
+
 .*.sw?
 .DS_Store
-target
 .vscode

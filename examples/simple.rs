@@ -1,9 +1,10 @@
+extern crate cgmath;
+extern crate midgar;
+
 use std::rc::Rc;
 
-use cgmath;
-use midgar::{App, Midgar, Surface, KeyCode};
+use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
-
 
 pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
@@ -81,4 +82,14 @@ impl<'a> App for GameApp<'a> {
 
     fn destroy(&mut self, midgar: &Midgar) {
     }
+}
+
+
+fn main() {
+    // TODO: Consider using a builder.
+    let config = MidgarAppConfig::new();
+    // TODO: Any need to actually return an app? Just run the config? Maybe run and return a
+    // handle?
+    let app: MidgarApp<GameApp> = MidgarApp::new(config);
+    app.run();
 }

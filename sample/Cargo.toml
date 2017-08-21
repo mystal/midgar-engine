@@ -1,8 +1,0 @@
-[package]
-name = "midgar-sample"
-version = "0.1.0"
-authors = ["Gabriel Martinez <reitaka@gmail.com>"]
-
-[dependencies]
-cgmath = "^0.12.0"
-midgar = { path = "../midgar" }

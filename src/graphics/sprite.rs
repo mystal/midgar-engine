@@ -357,6 +357,7 @@ pub struct Sprite<'a> {
     position: Vector2<f32>,
     origin: Vector2<f32>,
     rotation: f32,
+    forced_size: (Option<f32>, Option<f32>),
     scale: Vector2<f32>,
     color: Vector3<f32>,
     flip_x: bool,
@@ -383,6 +384,7 @@ impl<'a> Sprite<'a> {
             position: cgmath::vec2(0.0, 0.0),
             origin: cgmath::vec2(0.5, 0.5),
             rotation: 0.0,
+            forced_size: (None, None),
             scale: cgmath::vec2(1.0, 1.0),
             color: cgmath::vec3(1.0, 1.0, 1.0),
             flip_x: false,
@@ -460,6 +462,7 @@ impl<'a> Sprite<'a> {
     fn get_vertex_data(&self) -> [VertexData; 4] {
         // Compute model matrix.
         let model = {
+            // TODO: Check for overridden width/height before scaling it.
             let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale());
             let translate = Matrix4::from_translation(self.position().cast::<f32>().extend(0.0));
             let rotate = if self.rotation() != 0.0 {

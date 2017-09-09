@@ -130,7 +130,8 @@ pub trait TextureRegionHolder {
         self.texture_region().offset()
     }
 
-    fn size(&self) -> Vector2<u32> {
+    // TODO: Return an f32 to allow overridding the size in Sprites.
+    fn size(&self) -> Vector2<f32> {
         self.texture_region().size()
     }
 

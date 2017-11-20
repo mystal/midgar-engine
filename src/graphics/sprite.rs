@@ -461,11 +461,14 @@ impl<'a> Sprite<'a> {
         // Compute model matrix.
         let model = {
             let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale());
-            let translate = Matrix4::from_translation(self.position().cast::<f32>().extend(0.0));
+            let origin = self.origin();
+            // Position the sprite at the origin.
+            let position = self.position().cast::<f32>() - scaled_size.mul_element_wise(origin);
+            let translate = Matrix4::from_translation(position.extend(0.0));
+            // Also rotate around the origin.
             let rotate = if self.rotation() != 0.0 {
                 let rotate_angle = cgmath::Deg(self.rotation());
                 let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-                let origin = self.origin();
                 Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
                     rotate_rotation *
                     Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))

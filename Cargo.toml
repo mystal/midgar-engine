@@ -4,11 +4,11 @@ version = "0.1.0"
 authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 
 [dependencies]
-cgmath = "^0.12.0"
-glium = { version = "^0.16.0", features = [], default-features = false }
+cgmath = "0.12"
+glium = { version = "0.16", features = [], default-features = false }
 glium_sdl2 = { git = "https://github.com/mystal/glium-sdl2", branch = "dev" }
-image = "^0.10.3"
-maybe-owned = "^0.2.0"
+image = "0.10"
+maybe-owned = "0.2"
 moving-average = { git = "https://github.com/mystal/moving-average" }
-# rand = "^0.3.0"
-sdl2 = "^0.29.1"
+# rand = "0.3"
+sdl2 = "0.29"

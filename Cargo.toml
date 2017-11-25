@@ -5,10 +5,10 @@ authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 
 [dependencies]
 cgmath = "0.12"
-glium = { version = "0.16", features = [], default-features = false }
-glium_sdl2 = { git = "https://github.com/mystal/glium-sdl2", branch = "dev" }
+glium = { version = "0.18", features = [], default-features = false }
+glium_sdl2 = "0.15"
 image = "0.10"
 maybe-owned = "0.2"
 moving-average = { git = "https://github.com/mystal/moving-average" }
 # rand = "0.3"
-sdl2 = "0.29"
+sdl2 = "0.30"

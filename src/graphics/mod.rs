@@ -64,10 +64,11 @@ impl Graphics {
         let image = image::open(path).unwrap().to_rgba();
         let image_dimensions = image.dimensions();
         let image = if reversed {
-            glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), image_dimensions)
+            glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions)
         } else {
             glium::texture::RawImage2d::from_raw_rgba(image.into_raw(), image_dimensions)
         };
+        // TODO: Use with_mipmaps and disable them (or expose them!)
         glium::Texture2d::new(&self.display, image).unwrap()
     }
 

@@ -59,20 +59,27 @@ impl ShapeRenderer {
     pub fn draw_filled_rect<S: Surface>(&self, x: f32, y: f32, width: f32, height: f32,
                                         color: [f32; 3], target: &mut S) {
         // TODO: Cache model in sprite?
+        let size = cgmath::vec2(width, height);
         let scale = 1.0f32;
         let position = cgmath::vec2(x, y);
-        let size = cgmath::vec2(width, height);
         let rotation = 0.0f32;
+
         let model = {
             let scaled_size = size.mul_element_wise(scale);
+            let origin = cgmath::vec2(0.5, 0.5);
+            // Position the sprite at the origin.
+            let position = position - scaled_size.mul_element_wise(origin);
             let translate = Matrix4::from_translation(position.extend(0.0));
-            let rotate_angle = cgmath::Deg(rotation);
-            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-            // FIXME: Rotate around Sprite's origin
-            let rotate =
-                Matrix4::from_translation(cgmath::vec3(0.5 * scaled_size.x, 0.5 * scaled_size.y, 0.0)) *
-                rotate_rotation *
-                Matrix4::from_translation(cgmath::vec3(-0.5 * scaled_size.x, -0.5 * scaled_size.y, 0.0));
+            // Also rotate around the origin.
+            let rotate = if rotation != 0.0 {
+                let rotate_angle = cgmath::Deg(rotation);
+                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
+                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
+                    rotate_rotation *
+                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
+            } else {
+                Matrix4::identity()
+            };
             let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
             translate * rotate * scale
         };

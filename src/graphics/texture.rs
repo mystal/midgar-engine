@@ -61,6 +61,22 @@ impl TextureRegion {
         }
     }
 
+    // TODO: Return a 2D vector or a structure that lets you index in 2D.
+    pub fn split(texture: Rc<glium::Texture2d>, size: (u32, u32)) -> Vec<Self> {
+        let texture_size = texture.dimensions();
+
+        let mut regions = Vec::new();
+
+        for j in 0..(texture_size.1 / size.1) {
+            for i in 0..(texture_size.0 / size.0) {
+                let offset = (i * size.0, j * size.1);
+                regions.push(Self::with_sub_field(texture.clone(), offset, size))
+            }
+        }
+
+        regions
+    }
+
     pub fn texture(&self) -> &glium::Texture2d {
         self.texture.borrow()
     }

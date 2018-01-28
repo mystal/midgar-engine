@@ -2,10 +2,10 @@
 
 layout (location = 0) in vec2 pos;
 layout (location = 1) in vec2 tex_coords;
-layout (location = 2) in vec3 color;
+layout (location = 2) in vec4 color;
 
 out vec2 texCoords;
-out vec3 spriteColor;
+out vec4 spriteColor;
 
 // The combined projection/view matrix.
 uniform mat4 projectionView;

@@ -24,7 +24,7 @@ impl<'a> App for GameApp<'a> {
         let texture = Rc::new(texture);
         let mut sprite = Sprite::new(texture);
         sprite.set_position(cgmath::vec2(200.0, 200.0));
-        sprite.set_color(cgmath::vec3(0.0, 1.0, 0.0));
+        sprite.set_color(cgmath::vec4(0.0, 1.0, 0.0, 0.2));
         sprite.set_origin(cgmath::vec2(0.0, 0.0));
         //sprite.set_flip_x(true);
         sprite.set_flip_y(true);

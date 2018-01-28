@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 use std::thread;
 
-use cgmath::{self, Matrix4, Vector2, Vector3};
+use cgmath::{self, Matrix4, Vector2, Vector4};
 use cgmath::prelude::*;
 use glium::{self, DrawError, GlObject, Surface};
 use glium::uniforms::{Sampler, SamplerBehavior};
@@ -26,7 +26,7 @@ const BATCH_INDEX_SIZE: usize = QUAD_INDEX_SIZE * BATCH_SIZE;
 pub struct VertexData {
     pos: [f32; 2],
     tex_coords: [f32; 2],
-    color: [f32; 3],
+    color: [f32; 4],
 }
 implement_vertex!(VertexData, pos, tex_coords, color);
 
@@ -358,7 +358,7 @@ pub struct Sprite<'a> {
     origin: Vector2<f32>,
     rotation: f32,
     scale: Vector2<f32>,
-    color: Vector3<f32>,
+    color: Vector4<f32>,
     flip_x: bool,
     flip_y: bool,
 }
@@ -384,7 +384,7 @@ impl<'a> Sprite<'a> {
             origin: cgmath::vec2(0.5, 0.5),
             rotation: 0.0,
             scale: cgmath::vec2(1.0, 1.0),
-            color: cgmath::vec3(1.0, 1.0, 1.0),
+            color: cgmath::vec4(1.0, 1.0, 1.0, 1.0),
             flip_x: false,
             flip_y: false,
         }
@@ -448,12 +448,12 @@ impl<'a> Sprite<'a> {
         self.flip_y
     }
 
-    pub fn set_color(&mut self, color: Vector3<f32>) {
+    pub fn set_color(&mut self, color: Vector4<f32>) {
         // FIXME: Either clamp between 0 and 1, or use u8. Probably use our own color struct.
         self.color = color;
     }
 
-    pub fn color(&self) -> Vector3<f32> {
+    pub fn color(&self) -> Vector4<f32> {
         self.color
     }
 
@@ -508,7 +508,7 @@ impl<'a> Sprite<'a> {
         let pos_bottom_left = [pos_bottom_left.x, pos_bottom_left.y];
         let pos_bottom_right = [pos_bottom_right.x, pos_bottom_right.y];
 
-        let color = cgmath::conv::array3(self.color());
+        let color = cgmath::conv::array4(self.color());
 
         [
             VertexData { pos: pos_top_left, tex_coords: tex_top_left, color: color },

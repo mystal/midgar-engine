@@ -256,6 +256,7 @@ pub struct SpriteRenderer {
 impl SpriteRenderer {
     // TODO: Create a builder for SpriteRenderer.
     pub fn new<F: glium::backend::Facade>(display: &F, projection: Matrix4<f32>) -> Self {
+        // TODO: Shaders output linear colors, not sRGB...
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
             vertex_shader: VERTEX_SHADER_SRC,

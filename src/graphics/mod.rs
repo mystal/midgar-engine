@@ -27,6 +27,8 @@ impl Graphics {
         // TODO: Allow App to request OpenGL versions
         video_subsystem.gl_attr().set_context_version(3, 3);
         video_subsystem.gl_attr().set_context_profile(sdl2::video::GLProfile::Core);
+        // TODO: We should retrieve an sRGB compatible framebuffer.
+        //video_subsystem.gl_attr().set_framebuffer_srgb_compatible(true);
         // NOTE: SDL2 uses double buffering by default.
 
         // Configure vsync

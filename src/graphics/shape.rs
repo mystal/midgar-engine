@@ -67,16 +67,17 @@ impl ShapeRenderer {
         let model = {
             let scaled_size = size.mul_element_wise(scale);
             let origin = cgmath::vec2(0.5, 0.5);
-            // Position the sprite at the origin.
-            let position = position - scaled_size.mul_element_wise(origin);
+            let pixel_origin = scaled_size.mul_element_wise(origin);
+            // Position the shape at the origin.
+            let position = position - pixel_origin;
             let translate = Matrix4::from_translation(position.extend(0.0));
             // Also rotate around the origin.
             let rotate = if rotation != 0.0 {
                 let rotate_angle = cgmath::Deg(rotation);
                 let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-                Matrix4::from_translation(cgmath::vec3(origin.x * scaled_size.x, origin.y * scaled_size.y, 0.0)) *
+                Matrix4::from_translation(pixel_origin.extend(0.0)) *
                     rotate_rotation *
-                    Matrix4::from_translation(cgmath::vec3(-origin.x * scaled_size.x, -origin.y * scaled_size.y, 0.0))
+                    Matrix4::from_translation(-pixel_origin.extend(0.0))
             } else {
                 Matrix4::identity()
             };

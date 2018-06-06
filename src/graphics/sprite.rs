@@ -461,11 +461,11 @@ impl<'a> Sprite<'a> {
     fn get_vertex_data(&self) -> [VertexData; 4] {
         // Compute model matrix.
         let model = {
-            let scaled_size = self.size().cast::<f32>().mul_element_wise(self.scale());
+            let scaled_size = self.size().cast::<f32>().expect("Could not scale size").mul_element_wise(self.scale());
             let origin = self.origin();
             let pixel_origin = scaled_size.mul_element_wise(origin);
             // Position the sprite at the origin.
-            let position = self.position().cast::<f32>() - pixel_origin;
+            let position = self.position().cast::<f32>().expect("Could not cast position to f32") - pixel_origin;
             let translate = Matrix4::from_translation(position.extend(0.0));
             // Also rotate around the origin.
             let rotate = if self.rotation() != 0.0 {

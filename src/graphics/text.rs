@@ -1,14 +1,13 @@
 use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
-use std::rc::Rc;
 
-use cgmath::{self, Matrix4, Vector2, Vector3};
+use cgmath::{self, Matrix4};
 use cgmath::prelude::*;
 use glium::{self, Surface, Texture2d};
 pub use rusttype::Font;
-use rusttype::{FontCollection, PositionedGlyph, Rect, Scale, ScaledGlyph, point};
-use rusttype::gpu_cache::Cache;
+use rusttype::{FontCollection, PositionedGlyph, Scale, ScaledGlyph, point};
+use rusttype::gpu_cache::{Cache, CacheBuilder};
 
 //use super::texture_region::{TextureRegion, TextureRegionHolder};
 
@@ -29,23 +28,27 @@ struct Vertex {
 implement_vertex!(Vertex, vertex);
 
 
-pub struct TextRenderer {
+pub struct TextRenderer<'a> {
     // TODO: Store projection matrix here?
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     //index_buffer: glium::VertexBuffer<Vertex>,
-    glyph_cache: Cache,
+    glyph_cache: Cache<'a>,
     glyph_cache_tex: Texture2d,
 }
 
-impl TextRenderer {
+impl<'a> TextRenderer<'a> {
     pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
         // TODO: Store the DPI from SDL2?
 
         let dpi_factor = 1;
         // TODO: Make these tunable.
         let (cache_width, cache_height) = (512 * dpi_factor, 512 * dpi_factor);
-        let mut glyph_cache = Cache::new(cache_width, cache_height, 0.1, 0.1);
+        let glyph_cache = CacheBuilder {
+            width: cache_width,
+            height: cache_height,
+            .. CacheBuilder::default()
+        }.build();
 
         let glyph_cache_tex = glium::texture::Texture2d::with_format(
             display,
@@ -84,9 +87,10 @@ impl TextRenderer {
         }
     }
 
-    pub fn draw_text<S: Surface>(&mut self, text: &str, font: &Font, color: [f32; 3],
-                                 size: u8, x: f32, y: f32, width: u32,
-                                 projection: &Matrix4<f32>, target: &mut S) {
+    pub fn draw_text<'font, S>(&mut self, text: &str, font: &'font Font, color: [f32; 3],
+                               size: u8, x: f32, y: f32, width: u32,
+                               projection: &Matrix4<f32>, target: &mut S)
+        where S: Surface, 'font: 'a {
         // TODO: Correctly get the dpi_factor for High DPI displays.
         //let dpi_factor = {
         //    let window = display.get_window().unwrap();
@@ -212,16 +216,21 @@ impl TextRenderer {
     }
 }
 
-pub fn load_font_from_path<'a, 'b>(font_path: &'a str) -> Font<'b> {
+pub fn load_font_from_path<'a, 'font>(font_path: &'a str) -> Font<'font> {
     // TODO: Handle errors! Return a Result!
     let font_bytes = {
         let mut font_bytes = Vec::new();
-        let mut font_file = File::open(font_path).expect("Could not load font file.");
-        font_file.read_to_end(&mut font_bytes).expect("Could not read font file.");
+        let mut font_file = File::open(font_path)
+            .expect("Could not load font file.");
+        font_file.read_to_end(&mut font_bytes)
+            .expect("Could not read font file.");
 
         font_bytes
     };
-    FontCollection::from_bytes(font_bytes).into_font().expect("Could not read font file")
+    FontCollection::from_bytes(font_bytes)
+        .expect("Could not load font file")
+        .into_font()
+        .expect("Could not turn FontCollection into a Font")
 }
 
 struct GlyphPos<'a> {
@@ -232,14 +241,14 @@ struct GlyphPos<'a> {
 // Based on the rusttype gpu_cache example and Pathfinder's shaper::shape_text method:
 // * https://github.com/dylanede/rusttype/blob/master/examples/gpu_cache.rs
 // * https://github.com/pcwalton/pathfinder/blob/master/src/shaper.rs
-fn layout_paragraph<'a>(font: &'a Font,
-                        scale: Scale,
-                        width: u32,
-                        text: &str) -> Vec<PositionedGlyph<'a>> {
+fn layout_paragraph<'font>(font: &'font Font,
+                           scale: Scale,
+                           width: u32,
+                           text: &str) -> Vec<PositionedGlyph<'font>> {
     // TODO: We should probably support use this.
     //use unicode_normalization::UnicodeNormalization;
 
-    let space_advance = font.glyph(' ').unwrap().scaled(scale).h_metrics().advance_width;
+    let space_advance = font.glyph(' ').scaled(scale).h_metrics().advance_width;
 
     let mut glyphs = Vec::new();
     let v_metrics = font.v_metrics(scale);
@@ -258,14 +267,14 @@ fn layout_paragraph<'a>(font: &'a Font,
 
                 while let Some(ch) = chars.next() {
                     let glyph = match next_glyph.take() {
-                        None => font.glyph(ch).unwrap().scaled(scale),
+                        None => font.glyph(ch).scaled(scale),
                         Some(next_glyph) => next_glyph,
                     };
 
                     let mut advance = glyph.h_metrics().advance_width;
 
                     if let Some(&next_char) = chars.peek() {
-                        let next = font.glyph(next_char).unwrap().scaled(scale);
+                        let next = font.glyph(next_char).scaled(scale);
                         let next_id = next.id();
                         next_glyph = Some(next);
                         advance += font.pair_kerning(scale, glyph.id(), next_id)

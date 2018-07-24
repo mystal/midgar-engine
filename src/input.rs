@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 
 use sdl2;
 pub use sdl2::controller::{Axis, Button, GameController};
@@ -12,9 +13,8 @@ pub enum ElementState {
     Released,
 }
 
-//#[derive(Debug)]
 pub struct Controller {
-    id: u32,
+    instance_id: i32,
     sdl_controller: GameController,
     axis_positions: HashMap<Axis, i16>,
     held_buttons: HashSet<Button>,
@@ -22,11 +22,23 @@ pub struct Controller {
     released_buttons: HashSet<Button>,
 }
 
+impl fmt::Debug for Controller {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Controller")
+            .field("instance_id", &self.instance_id)
+            .field("axis_positions", &self.axis_positions)
+            .field("held_buttons", &self.held_buttons)
+            .field("pressed_buttons", &self.pressed_buttons)
+            .field("released_buttons", &self.released_buttons)
+            .finish()
+    }
+}
+
 impl Controller {
-    fn new(id: u32, sdl_controller: GameController) -> Self {
+    fn new(instance_id: i32, sdl_controller: GameController) -> Self {
         Controller {
-            id: id,
-            sdl_controller: sdl_controller,
+            instance_id,
+            sdl_controller,
             axis_positions: HashMap::new(),
             held_buttons: HashSet::new(),
             pressed_buttons: HashSet::new(),
@@ -83,20 +95,9 @@ pub struct Input {
 }
 
 impl Input {
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
+    pub(crate) fn new(sdl_context: &sdl2::Sdl) -> Self {
         // Initialize controller subsystem.
         let controller_subsystem = sdl_context.game_controller().unwrap();
-
-        // Iterate over any currently connected devices.
-        let num_joysticks = controller_subsystem.num_joysticks().unwrap();
-        let controllers: Vec<_> = (0..num_joysticks)
-            .filter(|&id| controller_subsystem.is_game_controller(id))
-            .map(|id| {
-                let sdl_controller = controller_subsystem.open(id).unwrap();
-                Controller::new(id, sdl_controller)
-            })
-            .collect();
 
         Input {
             held_keys: HashSet::new(),
@@ -109,8 +110,8 @@ impl Input {
             mouse_pos: (0, 0),
             mouse_moved: false,
 
-            controllers: controllers,
-            controller_subsystem: controller_subsystem,
+            controllers: Vec::new(),
+            controller_subsystem,
         }
     }
 
@@ -146,8 +147,7 @@ impl Input {
         self.controllers.as_slice()
     }
 
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn begin_frame(&mut self) {
+    pub(crate) fn begin_frame(&mut self) {
         self.pressed_keys.clear();
         self.released_keys.clear();
 
@@ -160,8 +160,7 @@ impl Input {
         }
     }
 
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn handle_keyboard_input(&mut self, state: ElementState, keycode: Option<KeyCode>) {
+    pub(crate) fn handle_keyboard_input(&mut self, state: ElementState, keycode: Option<KeyCode>) {
         if let Some(keycode) = keycode {
             match state {
                 ElementState::Pressed => self.press_key(keycode),
@@ -170,33 +169,31 @@ impl Input {
         }
     }
 
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn handle_mouse_input(&mut self, state: ElementState, button: MouseButton) {
+    pub(crate) fn handle_mouse_input(&mut self, state: ElementState, button: MouseButton) {
         match state {
             ElementState::Pressed => self.press_button(button),
             ElementState::Released => self.release_button(button),
         }
     }
 
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn handle_mouse_motion(&mut self, x: i32, y: i32) {
+    pub(crate) fn handle_mouse_motion(&mut self, x: i32, y: i32) {
         self.mouse_pos = (x, y);
     }
 
-    pub fn handle_controller_added(&mut self, id: i32) {
-        if id >= 0 {
+    pub(crate) fn handle_controller_added(&mut self, joystick_id: i32) {
+        if joystick_id >= 0 {
             // TODO: Check for duplicate entry?
-            let id = id as u32;
-            let sdl_controller = self.controller_subsystem.open(id).unwrap();
-            self.controllers.push(Controller::new(id, sdl_controller));
+            let joystick_id = joystick_id as u32;
+            let sdl_controller = self.controller_subsystem.open(joystick_id).unwrap();
+            self.controllers.push(Controller::new(sdl_controller.instance_id(), sdl_controller));
         } else {
             // TODO: Log error?
         }
     }
 
-    pub fn handle_controller_removed(&mut self, id: i32) {
+    pub(crate) fn handle_controller_removed(&mut self, instance_id: i32) {
         let index = self.controllers.iter().enumerate()
-            .find(|&(_, controller)| controller.id == id as u32)
+            .find(|&(_, controller)| controller.instance_id == instance_id)
             .map(|(i, _)| i);
         if let Some(index) = index {
             self.controllers.remove(index);
@@ -205,13 +202,13 @@ impl Input {
         }
     }
 
-    pub fn handle_controller_remapped(&mut self, id: i32) {
+    pub(crate) fn handle_controller_remapped(&mut self, instance_id: i32) {
         // TODO: Implement
     }
 
-    pub fn handle_controller_axis(&mut self, id: i32, axis: Axis, value: i16) {
+    pub(crate) fn handle_controller_axis(&mut self, instance_id: i32, axis: Axis, value: i16) {
         let controller = self.controllers.iter_mut()
-            .find(|controller| controller.id == id as u32);
+            .find(|controller| controller.instance_id == instance_id);
         if let Some(controller) = controller {
             controller.axis_positions.insert(axis, value);
         } else {
@@ -219,9 +216,9 @@ impl Input {
         }
     }
 
-    pub fn handle_controller_button(&mut self, id: i32, state: ElementState, button: Button) {
+    pub(crate) fn handle_controller_button(&mut self, instance_id: i32, state: ElementState, button: Button) {
         let controller = self.controllers.iter_mut()
-            .find(|controller| controller.id == id as u32);
+            .find(|controller| controller.instance_id == instance_id);
         if let Some(controller) = controller {
             match state {
                 ElementState::Pressed => controller.press_button(button),

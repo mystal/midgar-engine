@@ -13,7 +13,7 @@ use moving_average::MovingAverage;
 
 pub use app::App;
 pub use config::MidgarAppConfig;
-pub use input::{Axis, Button, KeyCode, MouseButton};
+pub use input::{Axis, Button, Input, KeyCode, MouseButton};
 
 use std::time::{
     Duration,
@@ -22,7 +22,7 @@ use std::time::{
 use std::thread;
 
 use graphics::Graphics;
-use input::{ElementState, Input};
+use input::ElementState;
 use time::Time;
 
 mod app;

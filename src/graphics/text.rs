@@ -28,16 +28,16 @@ struct Vertex {
 implement_vertex!(Vertex, vertex);
 
 
-pub struct TextRenderer<'a> {
+pub struct TextRenderer<'cache> {
     // TODO: Store projection matrix here?
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     //index_buffer: glium::VertexBuffer<Vertex>,
-    glyph_cache: Cache<'a>,
+    glyph_cache: Cache<'cache>,
     glyph_cache_tex: Texture2d,
 }
 
-impl<'a> TextRenderer<'a> {
+impl<'cache> TextRenderer<'cache> {
     pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
         // TODO: Store the DPI from SDL2?
 
@@ -87,10 +87,12 @@ impl<'a> TextRenderer<'a> {
         }
     }
 
-    pub fn draw_text<'font, S>(&mut self, text: &str, font: &'font Font, color: [f32; 3],
-                               size: u8, x: f32, y: f32, width: u32,
-                               projection: &Matrix4<f32>, target: &mut S)
-        where S: Surface, 'font: 'a {
+    // TODO: I want to pass the font by ref, but tend to have borrow errors in calling code...
+    // TODO: Maybe it's worth just using gfx_glyph.
+    pub fn draw_text<S>(&mut self, text: &str, font: Font<'cache>, color: [f32; 3],
+                        size: u8, x: f32, y: f32, width: u32,
+                        projection: &Matrix4<f32>, target: &mut S)
+        where S: Surface {
         // TODO: Correctly get the dpi_factor for High DPI displays.
         //let dpi_factor = {
         //    let window = display.get_window().unwrap();
@@ -216,7 +218,7 @@ impl<'a> TextRenderer<'a> {
     }
 }
 
-pub fn load_font_from_path<'a, 'font>(font_path: &'a str) -> Font<'font> {
+pub fn load_font_from_path<'font>(font_path: &str) -> Font<'font> {
     // TODO: Handle errors! Return a Result!
     let font_bytes = {
         let mut font_bytes = Vec::new();
@@ -241,7 +243,7 @@ struct GlyphPos<'a> {
 // Based on the rusttype gpu_cache example and Pathfinder's shaper::shape_text method:
 // * https://github.com/dylanede/rusttype/blob/master/examples/gpu_cache.rs
 // * https://github.com/pcwalton/pathfinder/blob/master/src/shaper.rs
-fn layout_paragraph<'font>(font: &'font Font,
+fn layout_paragraph<'font>(font: Font<'font>,
                            scale: Scale,
                            width: u32,
                            text: &str) -> Vec<PositionedGlyph<'font>> {

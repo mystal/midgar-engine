@@ -9,7 +9,7 @@ use midgar::graphics::text::{self, Font, TextRenderer};
 
 pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
-    text_renderer: TextRenderer,
+    text_renderer: TextRenderer<'a>,
     sprite: Sprite<'a>,
     font: Font<'a>,
     projection: cgmath::Matrix4<f32>,
@@ -72,7 +72,7 @@ impl<'a> App for GameApp<'a> {
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         self.sprite_renderer.draw(&self.sprite, draw_params, &mut target);
         // TODO: Fix text rendering so it doesn't require a separate projection matrix?
-        self.text_renderer.draw_text("Testing!\n1, 2, 3, testing!", &self.font, [1.0, 1.0, 1.0],
+        self.text_renderer.draw_text("Testing!\n1, 2, 3, testing!", self.font.clone(), [1.0, 1.0, 1.0],
                                      20, 100.0, 100.0, 300, &self.text_projection, &mut target);
         target.finish().unwrap();
     }

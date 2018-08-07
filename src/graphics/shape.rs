@@ -9,17 +9,17 @@ const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/shape.fs.glsl");
 const QUAD_SIZE: usize = 6;
 
 #[derive(Clone, Copy)]
-struct Vertex {
-    vertex: [f32; 2],
+struct VertexData {
+    pos: [f32; 2],
+    color: [f32; 4],
 }
 
-implement_vertex!(Vertex, vertex);
-
+implement_vertex!(VertexData, pos, color);
 
 pub struct ShapeRenderer {
     projection_matrix: Matrix4<f32>,
     shader: glium::Program,
-    vertex_buffer: glium::VertexBuffer<Vertex>,
+    vertex_buffer: glium::VertexBuffer<VertexData>,
 }
 
 impl ShapeRenderer {
@@ -57,12 +57,11 @@ impl ShapeRenderer {
 
     // TODO: Pull out common drawing logic.
     pub fn draw_filled_rect<S: Surface>(&self, x: f32, y: f32, width: f32, height: f32,
-                                        color: [f32; 3], target: &mut S) {
+                                        rotation: f32, color: [f32; 4], target: &mut S) {
         // TODO: Cache model in sprite?
         let size = cgmath::vec2(width, height);
         let scale = 1.0f32;
         let position = cgmath::vec2(x, y);
-        let rotation = 0.0f32;
 
         let model = {
             let scaled_size = size.mul_element_wise(scale);
@@ -85,13 +84,25 @@ impl ShapeRenderer {
             translate * rotate * scale
         };
 
+        // TODO: Have a const 4x4 matrix with the coordinates and simply multiply it with the
+        // model. Then take slices to put into vertex data.
+        let pos_top_left = model * cgmath::vec4(0.0, 1.0, 0.0, 1.0);
+        let pos_top_right = model * cgmath::vec4(1.0, 1.0, 0.0, 1.0);
+        let pos_bottom_left = model * cgmath::vec4(1.0, 0.0, 0.0, 1.0);
+        let pos_bottom_right = model * cgmath::vec4(0.0, 0.0, 0.0, 1.0);
+
+        let pos_top_left = [pos_top_left.x, pos_top_left.y];
+        let pos_top_right = [pos_top_right.x, pos_top_right.y];
+        let pos_bottom_left = [pos_bottom_left.x, pos_bottom_left.y];
+        let pos_bottom_right = [pos_bottom_right.x, pos_bottom_right.y];
+
         let vertices = &[
-            Vertex { vertex: [0.0, 1.0] },
-            Vertex { vertex: [1.0, 0.0] },
-            Vertex { vertex: [0.0, 0.0] },
-            Vertex { vertex: [0.0, 1.0] },
-            Vertex { vertex: [1.0, 1.0] },
-            Vertex { vertex: [1.0, 0.0] },
+            VertexData { pos: pos_top_left, color },
+            VertexData { pos: pos_bottom_left, color },
+            VertexData { pos: pos_bottom_right, color },
+            VertexData { pos: pos_top_left, color },
+            VertexData { pos: pos_top_right, color },
+            VertexData { pos: pos_bottom_left, color },
         ];
         // NOTE: For batched rendering, you can allocate a big vertex buffer at the start and copy
         // vertex data each time you go to draw. So copy the data to the vertex buffer here!
@@ -102,10 +113,7 @@ impl ShapeRenderer {
         let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
         let uniforms = uniform! {
-            shapeColor: color,
-            model: cgmath::conv::array4x4(model),
-            view: cgmath::conv::array4x4(Matrix4::<f32>::identity()),
-            projection: cgmath::conv::array4x4(self.projection_matrix),
+            projectionView: cgmath::conv::array4x4(self.projection_matrix),
         };
 
         // TODO: Let user specify alpha blending.

@@ -1,10 +1,9 @@
 #version 330 core
 
+in vec4 shapeColor;
+
 out vec4 color;
 
-uniform sampler2D image;
-uniform vec3 shapeColor;
-
 void main() {
-    color = vec4(shapeColor, 1.0);
+    color = shapeColor;
 }

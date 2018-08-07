@@ -4,6 +4,7 @@ layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
 
 out vec2 texCoords;
 
+// TODO: Pass in pre-multiplied MVP matrix.
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;

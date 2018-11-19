@@ -1,6 +1,6 @@
 use cgmath::{self, Matrix4};
 use cgmath::prelude::*;
-use glium::{self, Surface};
+use glium::{self, Surface, uniform};
 
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs.glsl");
@@ -14,7 +14,7 @@ struct VertexData {
     color: [f32; 4],
 }
 
-implement_vertex!(VertexData, pos, color);
+glium::implement_vertex!(VertexData, pos, color);
 
 pub struct ShapeRenderer {
     projection_matrix: Matrix4<f32>,

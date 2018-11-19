@@ -1,5 +1,4 @@
 extern crate cgmath;
-#[macro_use]
 extern crate glium;
 extern crate glium_sdl2;
 extern crate image;
@@ -213,7 +212,8 @@ impl Midgar {
     }
 
     fn event_pump(&self) -> sdl2::EventPump {
-        self.sdl_context.event_pump().unwrap()
+        self.sdl_context.event_pump()
+            .unwrap()
     }
 }
 

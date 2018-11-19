@@ -4,7 +4,7 @@ use std::thread;
 
 use cgmath::{self, Matrix4, Vector2, Vector4};
 use cgmath::prelude::*;
-use glium::{self, DrawError, GlObject, Surface};
+use glium::{self, DrawError, GlObject, Surface, uniform};
 use glium::uniforms::{Sampler, SamplerBehavior};
 pub use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerWrapFunction};
 use maybe_owned::MaybeOwned;
@@ -28,7 +28,7 @@ pub struct VertexData {
     tex_coords: [f32; 2],
     color: [f32; 4],
 }
-implement_vertex!(VertexData, pos, tex_coords, color);
+glium::implement_vertex!(VertexData, pos, tex_coords, color);
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SpriteDrawParams {

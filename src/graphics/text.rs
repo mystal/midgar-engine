@@ -4,7 +4,7 @@ use std::io::Read;
 
 use cgmath::{self, Matrix4};
 use cgmath::prelude::*;
-use glium::{self, Surface, Texture2d};
+use glium::{self, Surface, Texture2d, uniform};
 pub use rusttype::Font;
 use rusttype::{FontCollection, PositionedGlyph, Scale, ScaledGlyph, point};
 use rusttype::gpu_cache::{Cache, CacheBuilder};
@@ -25,7 +25,7 @@ struct Vertex {
     vertex: [f32; 4],
 }
 
-implement_vertex!(Vertex, vertex);
+glium::implement_vertex!(Vertex, vertex);
 
 
 pub struct TextRenderer<'cache> {

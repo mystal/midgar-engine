@@ -7,9 +7,9 @@ authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 cgmath = "0.16"
 glium = { version = "0.18", features = [], default-features = false }
 glium_sdl2 = "0.15"
+glyph_brush = "0.2"
 image = "0.19"
 maybe-owned = "0.3"
 moving-average = { git = "https://github.com/mystal/moving-average" }
 # rand = "0.3"
-rusttype = { version ="0.6", features = ["gpu_cache"] }
 sdl2 = "0.30"

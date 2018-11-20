@@ -1,12 +1,16 @@
 #version 330 core
 
-in vec2 texCoords;
+uniform sampler2D font_tex;
 
-out vec4 color;
+in vec2 f_tex_pos;
+in vec4 f_color;
 
-uniform sampler2D tex;
-uniform vec3 textColor;
+out vec4 out_color;
 
 void main() {
-    color = vec4(textColor, 1.0) * vec4(1.0, 1.0, 1.0, texture(tex, texCoords).r);
+    float alpha = texture(font_tex, f_tex_pos).r;
+    if (alpha <= 0.0) {
+        discard;
+    }
+    out_color = f_color * vec4(1.0, 1.0, 1.0, alpha);
 }

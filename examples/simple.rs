@@ -5,13 +5,12 @@ use std::rc::Rc;
 
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
-use midgar::graphics::text::{self, Font, TextRenderer};
+use midgar::graphics::text::{Scale, Section, TextRenderer};
 
 pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
     text_renderer: TextRenderer<'a>,
     sprite: Sprite<'a>,
-    font: Font<'a>,
     projection: cgmath::Matrix4<f32>,
     text_projection: cgmath::Matrix4<f32>,
 
@@ -37,7 +36,6 @@ impl<'a> App for GameApp<'a> {
             sprite_renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
             text_renderer: TextRenderer::new(midgar.graphics().display()),
             sprite: sprite,
-            font: text::load_font_from_path("assets/VeraMono.ttf"),
             projection,
             text_projection,
             play: false,
@@ -71,10 +69,16 @@ impl<'a> App for GameApp<'a> {
         let mut target = midgar.graphics().display().draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         self.sprite_renderer.draw(&self.sprite, draw_params, &mut target);
-        // TODO: Fix text rendering so it doesn't require a separate projection matrix?
-        self.text_renderer.draw_text("Testing!\n1, 2, 3, testing!", self.font.clone(), [1.0, 1.0, 1.0],
-                                     20, 100.0, 100.0, 300, &self.text_projection, &mut target);
-        target.finish().unwrap();
+        self.text_renderer.queue(Section {
+            text: "Testing!\n1, 2, 3, testing!",
+            color: [1.0, 1.0, 1.0, 1.0],
+            screen_position: (100.0, 100.0),
+            scale: Scale::uniform(20.0),
+            .. Section::default()
+        });
+        self.text_renderer.draw_queued(midgar.graphics().display(), &mut target);
+        target.finish()
+            .unwrap();
     }
 
     fn resize(&mut self, size: (u32, u32), midgar: &Midgar) {

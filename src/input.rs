@@ -6,7 +6,6 @@ pub use sdl2::controller::{Axis, Button, GameController};
 pub use sdl2::keyboard::Keycode as KeyCode;
 pub use sdl2::mouse::MouseButton;
 
-
 #[derive(Clone, Copy, Debug)]
 pub enum ElementState {
     Pressed,
@@ -180,15 +179,11 @@ impl Input {
         self.mouse_pos = (x, y);
     }
 
-    pub(crate) fn handle_controller_added(&mut self, joystick_id: i32) {
-        if joystick_id >= 0 {
-            // TODO: Check for duplicate entry?
-            let joystick_id = joystick_id as u32;
-            let sdl_controller = self.controller_subsystem.open(joystick_id).unwrap();
-            self.controllers.push(Controller::new(sdl_controller.instance_id(), sdl_controller));
-        } else {
-            // TODO: Log error?
-        }
+    pub(crate) fn handle_controller_added(&mut self, joystick_id: u32) {
+        // TODO: Check for duplicate entry?
+        let joystick_id = joystick_id;
+        let sdl_controller = self.controller_subsystem.open(joystick_id).unwrap();
+        self.controllers.push(Controller::new(sdl_controller.instance_id(), sdl_controller));
     }
 
     pub(crate) fn handle_controller_removed(&mut self, instance_id: i32) {

@@ -32,30 +32,28 @@ mod time;
 
 
 pub struct MidgarApp<T: App> {
-    frame_time: Duration,
+    frame_duration: Duration,
     midgar: Midgar,
     app: T,
 }
 
 impl<T: App> MidgarApp<T> {
     pub fn new(config: MidgarAppConfig) -> Self {
-        // Compute the frame_time Duration from FPS.
-        // TODO: Consider using nanosecond accuracy instead of milliseconds.
-        let frame_time_ms = ((1.0 / config.fps() as f64) * 1000.0) as u64;
-        let frame_time = Duration::from_millis(frame_time_ms);
+        // Compute the frame duration from FPS.
+        let frame_time_ns = (1_000_000_000.0 / config.fps() as f64) as u64;
+        let frame_duration = Duration::from_nanos(frame_time_ns);
 
         let midgar = Midgar::new(&config);
         let app = T::create(&midgar);
 
         MidgarApp {
-            frame_time: frame_time,
-            midgar: midgar,
-            app: app,
+            frame_duration,
+            midgar,
+            app,
         }
     }
 
     pub fn run(mut self) {
-
         let mut window_closed = false;
         let mut win_size = self.midgar.graphics.screen_size();
         let mut resized: Option<(u32, u32)> = None;
@@ -80,14 +78,14 @@ impl<T: App> MidgarApp<T> {
                         if let WindowEvent::Resized(x, y) = win_event {
                             resized = Some((x as u32, y as u32));
                         }
-                    },
+                    }
 
                     // Keyboard events.
                     KeyDown { keycode, repeat, .. } => {
                         if !repeat {
                             self.midgar.input.handle_keyboard_input(ElementState::Pressed, keycode);
                         }
-                    },
+                    }
                     KeyUp { keycode, .. } =>
                         self.midgar.input.handle_keyboard_input(ElementState::Released, keycode),
 
@@ -113,7 +111,7 @@ impl<T: App> MidgarApp<T> {
                     ControllerButtonUp { which, button, .. } =>
                         self.midgar.input.handle_controller_button(which, ElementState::Released, button),
 
-                    _ => {},
+                    _ => {}
                 }
             }
 
@@ -140,9 +138,9 @@ impl<T: App> MidgarApp<T> {
             let time_elapsed = start_time.elapsed();
             // Add it to frame times.
             self.midgar.frame_times.add(Time::duration_as_f64(time_elapsed));
-            // Sleep for the rest of the remaining frame time.
-            if time_elapsed < self.frame_time {
-                thread::sleep(self.frame_time - time_elapsed);
+            // Sleep for the rest of the remaining frame duration.
+            if time_elapsed < self.frame_duration {
+                thread::sleep(self.frame_duration - time_elapsed);
             }
         }
 

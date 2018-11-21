@@ -44,7 +44,7 @@ impl<T: App> MidgarApp<T> {
         let frame_duration = Duration::from_nanos(frame_time_ns);
 
         let midgar = Midgar::new(&config);
-        let app = T::create(&midgar);
+        let app = T::new(&midgar);
 
         MidgarApp {
             frame_duration,

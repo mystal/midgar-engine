@@ -18,7 +18,7 @@ pub struct GameApp<'a> {
 }
 
 impl<'a> App for GameApp<'a> {
-    fn create(midgar: &Midgar) -> Self {
+    fn new(midgar: &Midgar) -> Self {
         let texture = midgar.graphics().load_texture("assets/awesomeface.png", true);
         let texture = Rc::new(texture);
         let mut sprite = Sprite::new(texture);

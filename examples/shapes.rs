@@ -15,7 +15,7 @@ pub struct GameApp {
 }
 
 impl App for GameApp {
-    fn create(midgar: &Midgar) -> Self {
+    fn new(midgar: &Midgar) -> Self {
         let (screen_width, screen_height) = midgar.graphics().screen_size();
         let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
 

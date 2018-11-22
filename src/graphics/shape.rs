@@ -1,4 +1,4 @@
-use cgmath::{self, Matrix4};
+use cgmath::{self, Matrix4, Vector2};
 use cgmath::prelude::*;
 use glium::{self, Surface, uniform};
 use lyon::tessellation as tess;
@@ -19,32 +19,66 @@ struct VertexData {
 
 glium::implement_vertex!(VertexData, pos, color);
 
-// The vertex constructor. This is the object that will be used to create the custom
-// verticex from the information provided by the tessellators.
-struct WithColor([f32; 4]);
+// The vertex constructor. This is the object that will be used to create custom
+// vertexices from the information provided by lyon tessellators.
+struct VertexConstructor {
+    color: [f32; 4],
+    rotation_matrix: Option<Matrix4<f32>>,
+}
 
-impl tess::VertexConstructor<tess::FillVertex, VertexData> for WithColor {
-    fn new_vertex(&mut self, vertex: tess::FillVertex) -> VertexData {
-        // FillVertex also provides normals but we don't need it here.
-        VertexData {
-            pos: [
-                vertex.position.x,
-                vertex.position.y,
-            ],
-            color: self.0,
+impl VertexConstructor {
+    fn new(color: [f32; 4]) -> Self {
+        Self {
+            color,
+            rotation_matrix: None,
+        }
+    }
+
+    fn with_rotation(color: [f32; 4], pivot: Vector2<f32>, rotation: f32) -> Self {
+        let rotation_matrix = if rotation != 0.0 {
+            let rotate_angle = cgmath::Deg(rotation);
+            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
+            Some(Matrix4::from_translation(pivot.extend(0.0)) *
+                 rotate_rotation *
+                 Matrix4::from_translation(-pivot.extend(0.0)))
+        } else {
+            None
+        };
+        Self {
+            color,
+            rotation_matrix,
         }
     }
 }
 
-impl tess::VertexConstructor<tess::StrokeVertex, VertexData> for WithColor {
-    fn new_vertex(&mut self, vertex: tess::StrokeVertex) -> VertexData {
+impl tess::VertexConstructor<tess::FillVertex, VertexData> for VertexConstructor {
+    fn new_vertex(&mut self, vertex: tess::FillVertex) -> VertexData {
+        let (x, y) = if let Some(rotation_matrix) = self.rotation_matrix {
+            let rotated_vert = rotation_matrix * cgmath::vec4(vertex.position.x, vertex.position.y, 0.0, 1.0);
+            (rotated_vert.x, rotated_vert.y)
+        } else {
+            (vertex.position.x, vertex.position.y)
+        };
         // FillVertex also provides normals but we don't need it here.
         VertexData {
-            pos: [
-                vertex.position.x,
-                vertex.position.y,
-            ],
-            color: self.0,
+            pos: [x, y],
+            color: self.color,
+        }
+    }
+}
+
+impl tess::VertexConstructor<tess::StrokeVertex, VertexData> for VertexConstructor {
+    fn new_vertex(&mut self, vertex: tess::StrokeVertex) -> VertexData {
+        let (x, y) = if let Some(rotation_matrix) = self.rotation_matrix {
+            let rotated_vert = rotation_matrix * cgmath::vec4(vertex.position.x, vertex.position.y, 0.0, 1.0);
+            (rotated_vert.x, rotated_vert.y)
+        } else {
+            (vertex.position.x, vertex.position.y)
+        };
+        // FillVertex also provides normals but we don't need it here.
+        VertexData {
+            pos: [x, y],
+            color: self.color,
         }
     }
 }
@@ -84,17 +118,18 @@ impl ShapeRenderer {
         }
     }
 
-    // TODO: Support rotations!(?)
-    pub fn queue_rect(&mut self, draw_mode: DrawMode, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]) {
+    pub fn queue_rect(&mut self, draw_mode: DrawMode, x: f32, y: f32, width: f32, height: f32, rotation: f32, color: [f32; 4]) {
         // Center on x and y.
+        let pivot = Vector2::new(x, y);
         let (x, y) = (x - width / 2.0, y - height / 2.0);
+        let vertex_ctor = VertexConstructor::with_rotation(color, pivot, rotation);
         match draw_mode {
             DrawMode::Fill => {
                 let options = tess::FillOptions::default();
                 tess::basic_shapes::fill_rectangle(
                     &tess::math::rect(x, y, width, height),
                     &options,
-                    &mut tess::BuffersBuilder::new(&mut self.vertices, WithColor(color)),
+                    &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
                 );
             }
             DrawMode::Line(line_width) => {
@@ -103,7 +138,7 @@ impl ShapeRenderer {
                 tess::basic_shapes::stroke_rectangle(
                     &tess::math::rect(x, y, width, height),
                     &options,
-                    &mut tess::BuffersBuilder::new(&mut self.vertices, WithColor(color)),
+                    &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
                 );
             }
         }
@@ -111,6 +146,7 @@ impl ShapeRenderer {
 
     pub fn queue_circle(&mut self, draw_mode: DrawMode, x: f32, y: f32, radius: f32, color: [f32; 4]) {
         // TODO: Allow setting tolerance.
+        let vertex_ctor = VertexConstructor::new(color);
         match draw_mode {
             DrawMode::Fill => {
                 let options = tess::FillOptions::default();
@@ -118,7 +154,7 @@ impl ShapeRenderer {
                     tess::math::point(x, y),
                     radius,
                     &options,
-                    &mut tess::BuffersBuilder::new(&mut self.vertices, WithColor(color)),
+                    &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
                 );
             }
             DrawMode::Line(line_width) => {
@@ -128,7 +164,7 @@ impl ShapeRenderer {
                     tess::math::point(x, y),
                     radius,
                     &options,
-                    &mut tess::BuffersBuilder::new(&mut self.vertices, WithColor(color)),
+                    &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
                 );
             }
         }

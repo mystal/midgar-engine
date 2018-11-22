@@ -55,9 +55,8 @@ impl App for GameApp {
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         let color = [1.0, 0.0, 0.0, 1.0];
 
-        //self.shape_renderer.draw_filled_rect(100.0, 100.0, 50.0, 50.0, self.rotation, color, &mut target);
-        self.shape_renderer.queue_rect(DrawMode::Fill, 100.0, 100.0, 50.0, 50.0, color);
-        self.shape_renderer.queue_rect(DrawMode::Line(1.0), 200.0, 100.0, 50.0, 50.0, color);
+        self.shape_renderer.queue_rect(DrawMode::Fill, 100.0, 100.0, 50.0, 50.0, self.rotation, color);
+        self.shape_renderer.queue_rect(DrawMode::Line(1.0), 200.0, 100.0, 50.0, 50.0, self.rotation / 2.0, color);
         self.shape_renderer.queue_circle(DrawMode::Fill, 300.0, 100.0, 25.0, color);
         self.shape_renderer.queue_circle(DrawMode::Line(1.0), 400.0, 100.0, 25.0, color);
         self.shape_renderer.draw_queued(midgar.graphics().display(), &mut target);
@@ -81,7 +80,9 @@ impl App for GameApp {
 
 
 fn main() {
-    let config = MidgarAppConfig::new();
+    let config = MidgarAppConfig::new()
+        .with_fps(240)
+        .with_vsync(false);
     let app: MidgarApp<GameApp> = MidgarApp::new(config);
     app.run();
 }

@@ -140,6 +140,7 @@ impl<T: App> MidgarApp<T> {
             // Add it to frame times.
             self.midgar.frame_times.add(Time::duration_as_f64(time_elapsed));
             // Sleep for the rest of the remaining frame duration.
+            // TODO: Add a way to have uncapped frame rate.
             if time_elapsed < self.frame_duration {
                 thread::sleep(self.frame_duration - time_elapsed);
             }

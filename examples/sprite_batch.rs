@@ -3,6 +3,7 @@ extern crate midgar;
 
 use std::rc::Rc;
 
+use cgmath::Vector2;
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
 
@@ -11,8 +12,7 @@ const GRID: (usize, usize) = (100, 100);
 
 pub struct GameApp<'a> {
     renderer: SpriteRenderer,
-    sprite: Sprite<'a>,
-    sprite_positions: Vec<(f32, f32)>,
+    sprites: Vec<Sprite<'a>>,
     projection: cgmath::Matrix4<f32>,
 
     batch: bool,
@@ -34,18 +34,19 @@ impl<'a> App for GameApp<'a> {
         let horizontal_spacing = screen_width as f32 / GRID.0 as f32;
         let vertical_spacing = screen_height as f32 / GRID.1 as f32;
 
-        let mut sprite_positions = Vec::new();
+        let mut sprites = Vec::with_capacity(GRID.0 * GRID.1);
         for row in 0..GRID.1 {
             for col in 0..GRID.0 {
-                sprite_positions.push((col as f32 * horizontal_spacing, row as f32 * vertical_spacing));
+                let pos = Vector2::new(col as f32 * horizontal_spacing, row as f32 * vertical_spacing);
+                sprite.set_position(pos);
+                sprites.push(sprite.clone());
             }
         }
 
         GameApp {
             renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
-            sprite: sprite,
-            sprite_positions: sprite_positions,
-            projection: projection,
+            sprites,
+            projection,
             batch: false,
             time_to_fps: 1.0,
         }
@@ -79,15 +80,14 @@ impl<'a> App for GameApp<'a> {
 
         if self.batch {
             let mut batch = self.renderer.begin_batch(draw_params, &mut target);
-            for pos in &self.sprite_positions {
-                self.sprite.set_position(cgmath::vec2(pos.0, pos.1));
-                batch.draw(&self.sprite);
+            for sprite in &self.sprites {
+                batch.draw(sprite);
             }
-            batch.finish().unwrap();
+            batch.finish()
+                .unwrap();
         } else {
-            for pos in &self.sprite_positions {
-                self.sprite.set_position(cgmath::vec2(pos.0, pos.1));
-                self.renderer.draw(&self.sprite, draw_params, &mut target);
+            for sprite in &self.sprites {
+                self.renderer.draw(sprite, draw_params, &mut target);
             }
         }
 

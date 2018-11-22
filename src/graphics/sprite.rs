@@ -22,7 +22,7 @@ const BATCH_VERTEX_SIZE: usize = QUAD_VERTEX_SIZE * BATCH_SIZE;
 const BATCH_INDEX_SIZE: usize = QUAD_INDEX_SIZE * BATCH_SIZE;
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct VertexData {
     pos: [f32; 2],
     tex_coords: [f32; 2],
@@ -215,6 +215,7 @@ impl<'a, 'b, S> Drop for SpriteBatch<'a, 'b, S>
     }
 }
 
+#[derive(Debug)]
 pub struct SpriteQueue {
     vertices: Vec<VertexData>,
     textures: Vec<Rc<glium::Texture2d>>,
@@ -245,6 +246,7 @@ impl SpriteQueue {
     }
 }
 
+#[derive(Debug)]
 pub struct SpriteRenderer {
     projection_matrix: Matrix4<f32>,
     shader: glium::Program,
@@ -354,6 +356,7 @@ impl SpriteRenderer {
     }
 }
 
+#[derive(Clone)]
 pub struct Sprite<'a> {
     texture_region: MaybeOwned<'a, TextureRegion>,
 

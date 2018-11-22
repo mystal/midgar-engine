@@ -3,6 +3,7 @@ extern crate glium;
 extern crate glium_sdl2;
 extern crate glyph_brush;
 extern crate image;
+extern crate lyon;
 extern crate maybe_owned;
 extern crate moving_average;
 extern crate sdl2;

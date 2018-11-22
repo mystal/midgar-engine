@@ -3,8 +3,10 @@ extern crate midgar;
 
 use std::rc::Rc;
 
-use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
-use midgar::graphics::shape::ShapeRenderer;
+use midgar::{
+    App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode,
+    graphics::shape::{DrawMode, ShapeRenderer},
+};
 
 pub struct GameApp {
     shape_renderer: ShapeRenderer,
@@ -12,6 +14,8 @@ pub struct GameApp {
 
     rotation: f32,
     play: bool,
+
+    time_to_fps: f32,
 }
 
 impl App for GameApp {
@@ -25,6 +29,8 @@ impl App for GameApp {
 
             rotation: 0.0,
             play: false,
+
+            time_to_fps: 1.0,
         }
     }
 
@@ -48,9 +54,22 @@ impl App for GameApp {
         let mut target = midgar.graphics().display().draw();
         target.clear_color(0.1, 0.3, 0.4, 1.0);
         let color = [1.0, 0.0, 0.0, 1.0];
-        self.shape_renderer.draw_filled_rect(100.0, 100.0, 50.0, 50.0, self.rotation, color, &mut target);
+
+        //self.shape_renderer.draw_filled_rect(100.0, 100.0, 50.0, 50.0, self.rotation, color, &mut target);
+        self.shape_renderer.queue_rect(DrawMode::Fill, 100.0, 100.0, 50.0, 50.0, color);
+        self.shape_renderer.queue_rect(DrawMode::Line(1.0), 200.0, 100.0, 50.0, 50.0, color);
+        self.shape_renderer.queue_circle(DrawMode::Fill, 300.0, 100.0, 25.0, color);
+        self.shape_renderer.queue_circle(DrawMode::Line(1.0), 400.0, 100.0, 25.0, color);
+        self.shape_renderer.draw_queued(midgar.graphics().display(), &mut target);
+
         target.finish()
             .unwrap();
+
+        self.time_to_fps -= dt;
+        if self.time_to_fps <= 0.0 {
+            println!("FPS: {:.2}, Frame time: {:.2} ms", midgar.fps(), midgar.frame_time() * 1000.0);
+            self.time_to_fps = 1.0;
+        }
     }
 
     fn resize(&mut self, size: (u32, u32), midgar: &Midgar) {

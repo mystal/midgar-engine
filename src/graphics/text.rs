@@ -8,10 +8,7 @@ pub use glyph_brush::{
     rusttype::Scale,
     FontId, Section, VariedSection,
 };
-use glyph_brush::{
-    rusttype::{Rect, point},
-    BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder,
-};
+use glyph_brush::{BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder};
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/text.vs.glsl");
 const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/text.fs.glsl");
@@ -187,6 +184,8 @@ fn to_vertex(
         z,
     }: glyph_brush::GlyphVertex,
 ) -> GlyphVertex {
+    use glyph_brush::rusttype::{Rect, point};
+
     let gl_bounds = Rect {
         min: point(
             2.0 * (bounds.min.x / screen_w - 0.5),

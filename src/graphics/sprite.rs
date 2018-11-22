@@ -268,7 +268,8 @@ impl SpriteRenderer {
             outputs_srgb: true,
             uses_point_size: false,
         };
-        let shader = glium::Program::new(display, program_creation_input).unwrap();
+        let shader = glium::Program::new(display, program_creation_input)
+            .expect("Could not create SpriteRenderer shader program.");
 
         Self::with_shader(display, shader, projection)
     }
@@ -279,7 +280,7 @@ impl SpriteRenderer {
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(
             display,
             BATCH_VERTEX_SIZE,
-        ).unwrap();
+        ).expect("Could not create SpriteRenderer vertex buffer.");
 
         let mut indices = Vec::with_capacity(BATCH_INDEX_SIZE);
         for quad_index in 0..BATCH_SIZE {
@@ -294,7 +295,7 @@ impl SpriteRenderer {
             display,
             glium::index::PrimitiveType::TrianglesList,
             &indices,
-        ).unwrap();
+        ).expect("Could not create SpriteRenderer index buffer.");
 
         SpriteRenderer {
             projection_matrix: projection,
@@ -340,7 +341,8 @@ impl SpriteRenderer {
         let index_buffer = self.index_buffer.slice(0..QUAD_INDEX_SIZE)
             .expect("Index buffer does not contain enough elements!");
 
-        target.draw(vertex_buffer, index_buffer, &self.shader, &uniforms, &params).unwrap();
+        target.draw(vertex_buffer, index_buffer, &self.shader, &uniforms, &params)
+            .expect("Failed to draw sprites.");
     }
 
     pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {

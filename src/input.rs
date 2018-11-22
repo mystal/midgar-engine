@@ -106,6 +106,7 @@ impl Input {
             held_buttons: HashSet::new(),
             pressed_buttons: HashSet::new(),
             released_buttons: HashSet::new(),
+            // TODO: Different initial mouse position? Option?
             mouse_pos: (0, 0),
             mouse_moved: false,
 

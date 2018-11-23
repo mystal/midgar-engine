@@ -1,5 +1,5 @@
-extern crate cgmath;
 extern crate midgar;
+extern crate nalgebra_glm as glm;
 
 use std::rc::Rc;
 
@@ -11,8 +11,8 @@ pub struct GameApp<'a> {
     sprite_renderer: SpriteRenderer,
     text_renderer: TextRenderer<'a>,
     sprite: Sprite<'a>,
-    projection: cgmath::Matrix4<f32>,
-    text_projection: cgmath::Matrix4<f32>,
+    projection: glm::Mat4,
+    text_projection: glm::Mat4,
 
     play: bool,
 }
@@ -22,15 +22,15 @@ impl<'a> App for GameApp<'a> {
         let texture = midgar.graphics().load_texture("assets/awesomeface.png", true);
         let texture = Rc::new(texture);
         let mut sprite = Sprite::new(texture);
-        sprite.set_position(cgmath::vec2(200.0, 200.0));
-        sprite.set_color(cgmath::vec4(0.0, 1.0, 0.0, 0.2));
-        sprite.set_origin(cgmath::vec2(0.0, 0.0));
+        sprite.set_position(200.0, 200.0);
+        sprite.set_color([0.0, 1.0, 0.0, 0.2]);
+        sprite.set_origin(0.0, 0.0);
         //sprite.set_flip_x(true);
         sprite.set_flip_y(true);
 
         let (screen_width, screen_height) = midgar.graphics().screen_size();
-        let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
-        let text_projection = cgmath::ortho(0.0, screen_width as f32, screen_height as f32, 0.0, -1.0, 1.0);
+        let projection = glm::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
+        let text_projection = glm::ortho(0.0, screen_width as f32, screen_height as f32, 0.0, -1.0, 1.0);
 
         GameApp {
             sprite_renderer: SpriteRenderer::new(midgar.graphics().display(), projection),
@@ -81,21 +81,22 @@ impl<'a> App for GameApp<'a> {
             .unwrap();
     }
 
-    fn resize(&mut self, size: (u32, u32), midgar: &Midgar) {
+    fn resize(&mut self, size: (u32, u32), _midgar: &Midgar) {
         println!("Resize: {:?}", size);
-        self.projection = cgmath::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
+        self.projection = glm::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
+        self.text_projection = glm::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
         self.sprite_renderer.set_projection_matrix(self.projection);
     }
 
-    fn pause(&mut self, midgar: &Midgar) {
+    fn pause(&mut self, _midgar: &Midgar) {
         println!("Pause");
     }
 
-    fn resume(&mut self, midgar: &Midgar) {
+    fn resume(&mut self, _midgar: &Midgar) {
         println!("Resume");
     }
 
-    fn destroy(&mut self, midgar: &Midgar) {
+    fn destroy(&mut self, _midgar: &Midgar) {
     }
 }
 

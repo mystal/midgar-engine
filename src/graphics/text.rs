@@ -1,9 +1,8 @@
 use std::borrow::Cow;
 
-use cgmath::{self, Matrix4};
-use cgmath::prelude::*;
 use glium::{self, Surface, Texture2d, uniform};
 use glium::vertex::EmptyVertexAttributes;
+use glm;
 pub use glyph_brush::{
     rusttype::Scale,
     FontId, Section, VariedSection,
@@ -92,10 +91,10 @@ impl<'font> TextRenderer<'font> {
         F: glium::backend::Facade,
         S: Surface,
     {
-        self.draw_queued_with_transform(&Matrix4::identity(), display, target);
+        self.draw_queued_with_transform(&glm::identity(), display, target);
     }
 
-    pub fn draw_queued_with_transform<F, S>(&mut self, transform: &Matrix4<f32>, display: &F, target: &mut S)
+    pub fn draw_queued_with_transform<F, S>(&mut self, transform: &glm::Mat4, display: &F, target: &mut S)
     where
         F: glium::backend::Facade,
         S: Surface,
@@ -161,7 +160,7 @@ impl<'font> TextRenderer<'font> {
 
             let uniforms = uniform! {
                 font_tex: sampler,
-                transform: cgmath::conv::array4x4(*transform),
+                transform: *transform.as_ref(),
             };
             let params = glium::DrawParameters {
                 blend: glium::Blend::alpha_blending(),

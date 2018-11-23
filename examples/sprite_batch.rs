@@ -1,9 +1,8 @@
-extern crate cgmath;
 extern crate midgar;
+extern crate nalgebra_glm as glm;
 
 use std::rc::Rc;
 
-use cgmath::Vector2;
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
 use midgar::graphics::sprite::{Sprite, SpriteDrawParams, SpriteRenderer};
 
@@ -13,7 +12,7 @@ const GRID: (usize, usize) = (100, 100);
 pub struct GameApp<'a> {
     renderer: SpriteRenderer,
     sprites: Vec<Sprite<'a>>,
-    projection: cgmath::Matrix4<f32>,
+    projection: glm::Mat4,
 
     batch: bool,
     time_to_fps: f32,
@@ -28,7 +27,7 @@ impl<'a> App for GameApp<'a> {
         sprite.set_uniform_scale(0.05);
 
         let (screen_width, screen_height) = midgar.graphics().screen_size();
-        let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
+        let projection = glm::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
 
         // Compute evenly spaced sprite positions.
         let horizontal_spacing = screen_width as f32 / GRID.0 as f32;
@@ -37,8 +36,7 @@ impl<'a> App for GameApp<'a> {
         let mut sprites = Vec::with_capacity(GRID.0 * GRID.1);
         for row in 0..GRID.1 {
             for col in 0..GRID.0 {
-                let pos = Vector2::new(col as f32 * horizontal_spacing, row as f32 * vertical_spacing);
-                sprite.set_position(pos);
+                sprite.set_position(col as f32 * horizontal_spacing, row as f32 * vertical_spacing);
                 sprites.push(sprite.clone());
             }
         }

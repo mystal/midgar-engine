@@ -1,6 +1,5 @@
-use cgmath::{self, Matrix4, Vector2};
-use cgmath::prelude::*;
 use glium::{self, Surface, uniform};
+use glm;
 use lyon::tessellation as tess;
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs.glsl");
@@ -23,38 +22,35 @@ glium::implement_vertex!(VertexData, pos, color);
 // vertexices from the information provided by lyon tessellators.
 struct VertexConstructor {
     color: [f32; 4],
-    rotation_matrix: Option<Matrix4<f32>>,
+    transformation_matrix: Option<glm::Mat3>,
 }
 
 impl VertexConstructor {
     fn new(color: [f32; 4]) -> Self {
         Self {
             color,
-            rotation_matrix: None,
+            transformation_matrix: None,
         }
     }
 
-    fn with_rotation(color: [f32; 4], pivot: Vector2<f32>, rotation: f32) -> Self {
-        let rotation_matrix = if rotation != 0.0 {
-            let rotate_angle = cgmath::Deg(rotation);
-            let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-            Some(Matrix4::from_translation(pivot.extend(0.0)) *
-                 rotate_rotation *
-                 Matrix4::from_translation(-pivot.extend(0.0)))
+    fn with_rotation(color: [f32; 4], pivot: glm::Vec2, rotation: f32) -> Self {
+        let transformation_matrix = if rotation != 0.0 {
+            let rotation_matrix = glm::rotation2d(rotation.to_radians());
+            Some(glm::translation2d(&pivot) * rotation_matrix * glm::translation2d(&-pivot))
         } else {
             None
         };
         Self {
             color,
-            rotation_matrix,
+            transformation_matrix,
         }
     }
 }
 
 impl tess::VertexConstructor<tess::FillVertex, VertexData> for VertexConstructor {
     fn new_vertex(&mut self, vertex: tess::FillVertex) -> VertexData {
-        let (x, y) = if let Some(rotation_matrix) = self.rotation_matrix {
-            let rotated_vert = rotation_matrix * cgmath::vec4(vertex.position.x, vertex.position.y, 0.0, 1.0);
+        let (x, y) = if let Some(trans) = self.transformation_matrix {
+            let rotated_vert = trans * glm::vec3(vertex.position.x, vertex.position.y, 1.0);
             (rotated_vert.x, rotated_vert.y)
         } else {
             (vertex.position.x, vertex.position.y)
@@ -69,8 +65,8 @@ impl tess::VertexConstructor<tess::FillVertex, VertexData> for VertexConstructor
 
 impl tess::VertexConstructor<tess::StrokeVertex, VertexData> for VertexConstructor {
     fn new_vertex(&mut self, vertex: tess::StrokeVertex) -> VertexData {
-        let (x, y) = if let Some(rotation_matrix) = self.rotation_matrix {
-            let rotated_vert = rotation_matrix * cgmath::vec4(vertex.position.x, vertex.position.y, 0.0, 1.0);
+        let (x, y) = if let Some(trans) = self.transformation_matrix {
+            let rotated_vert = trans * glm::vec3(vertex.position.x, vertex.position.y, 1.0);
             (rotated_vert.x, rotated_vert.y)
         } else {
             (vertex.position.x, vertex.position.y)
@@ -84,14 +80,14 @@ impl tess::VertexConstructor<tess::StrokeVertex, VertexData> for VertexConstruct
 }
 
 pub struct ShapeRenderer {
-    projection_matrix: Matrix4<f32>,
+    projection_matrix: glm::Mat4,
     shader: glium::Program,
     vertices: tess::VertexBuffers<VertexData, u16>,
 }
 
 impl ShapeRenderer {
     // TODO: Create a builder for ShapeRenderer.
-    pub fn new<F: glium::backend::Facade>(display: &F, projection: Matrix4<f32>) -> Self {
+    pub fn new<F: glium::backend::Facade>(display: &F, projection: glm::Mat4) -> Self {
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
             vertex_shader: VERTEX_SHADER_SRC,
@@ -109,8 +105,8 @@ impl ShapeRenderer {
         Self::with_shader(display, shader, projection)
     }
 
-    pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program,
-                                                  projection: Matrix4<f32>) -> Self {
+    pub fn with_shader<F: glium::backend::Facade>(_display: &F, shader: glium::Program,
+                                                  projection: glm::Mat4) -> Self {
         ShapeRenderer {
             projection_matrix: projection,
             shader,
@@ -120,7 +116,7 @@ impl ShapeRenderer {
 
     pub fn queue_rect(&mut self, draw_mode: DrawMode, x: f32, y: f32, width: f32, height: f32, rotation: f32, color: [f32; 4]) {
         // Center on x and y.
-        let pivot = Vector2::new(x, y);
+        let pivot = glm::vec2(x, y);
         let (x, y) = (x - width / 2.0, y - height / 2.0);
         let vertex_ctor = VertexConstructor::with_rotation(color, pivot, rotation);
         match draw_mode {
@@ -184,7 +180,7 @@ impl ShapeRenderer {
         ).expect("Could not create SpriteRenderer index buffer.");
 
         let uniforms = uniform! {
-            projectionView: cgmath::conv::array4x4(self.projection_matrix),
+            projectionView: *self.projection_matrix.as_ref(),
         };
         let params = glium::DrawParameters {
             // TODO: Only set alpha blending if necessary.
@@ -199,11 +195,11 @@ impl ShapeRenderer {
         self.vertices.indices.clear();
     }
 
-    pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {
+    pub fn set_projection_matrix(&mut self, projection: glm::Mat4) {
         self.projection_matrix = projection;
     }
 
-    pub fn get_projection_matrix(&self) -> Matrix4<f32> {
+    pub fn get_projection_matrix(&self) -> glm::Mat4 {
         self.projection_matrix
     }
 }

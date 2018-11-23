@@ -1,7 +1,5 @@
-extern crate cgmath;
 extern crate midgar;
-
-use std::rc::Rc;
+extern crate nalgebra_glm as glm;
 
 use midgar::{
     App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode,
@@ -10,7 +8,7 @@ use midgar::{
 
 pub struct GameApp {
     shape_renderer: ShapeRenderer,
-    projection: cgmath::Matrix4<f32>,
+    projection: glm::Mat4,
 
     rotation: f32,
     play: bool,
@@ -21,7 +19,7 @@ pub struct GameApp {
 impl App for GameApp {
     fn new(midgar: &Midgar) -> Self {
         let (screen_width, screen_height) = midgar.graphics().screen_size();
-        let projection = cgmath::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
+        let projection = glm::ortho(0.0, screen_width as f32, 0.0, screen_height as f32, -1.0, 1.0);
 
         GameApp {
             shape_renderer: ShapeRenderer::new(midgar.graphics().display(), projection),
@@ -71,9 +69,9 @@ impl App for GameApp {
         }
     }
 
-    fn resize(&mut self, size: (u32, u32), midgar: &Midgar) {
+    fn resize(&mut self, size: (u32, u32), _midgar: &Midgar) {
         println!("Resize: {:?}", size);
-        self.projection = cgmath::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
+        self.projection = glm::ortho(0.0, size.0 as f32, 0.0, size.1 as f32, -1.0, 1.0);
         self.shape_renderer.set_projection_matrix(self.projection);
     }
 }

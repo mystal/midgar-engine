@@ -1,4 +1,3 @@
-extern crate cgmath;
 extern crate glium;
 extern crate glium_sdl2;
 extern crate glyph_brush;
@@ -6,6 +5,7 @@ extern crate image;
 extern crate lyon;
 extern crate maybe_owned;
 extern crate moving_average;
+extern crate nalgebra_glm as glm;
 extern crate sdl2;
 
 pub use glium::{Surface, Texture2d};
@@ -30,7 +30,6 @@ mod config;
 pub mod graphics;
 mod input;
 mod time;
-
 
 pub struct MidgarApp<T: App> {
     frame_duration: Duration,

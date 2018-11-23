@@ -2,11 +2,10 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 use std::thread;
 
-use cgmath::{self, Matrix4, Vector2, Vector4};
-use cgmath::prelude::*;
 use glium::{self, DrawError, GlObject, Surface, uniform};
 use glium::uniforms::{Sampler, SamplerBehavior};
 pub use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerWrapFunction};
+use glm;
 use maybe_owned::MaybeOwned;
 
 use graphics::texture::{TextureRegion, TextureRegionHolder};
@@ -149,7 +148,7 @@ impl<'a, 'b, S> SpriteBatch<'a, 'b, S>
                     );
                     let uniforms = uniform! {
                         image: sampler,
-                        projectionView: cgmath::conv::array4x4(self.renderer.projection_matrix),
+                        projectionView: *self.renderer.projection_matrix.as_ref(),
                     };
 
                     // Draw the batch.
@@ -180,7 +179,7 @@ impl<'a, 'b, S> SpriteBatch<'a, 'b, S>
             );
             let uniforms = uniform! {
                 image: sampler,
-                projectionView: cgmath::conv::array4x4(self.renderer.projection_matrix),
+                projectionView: *self.renderer.projection_matrix.as_ref(),
             };
 
             // Draw the batch.
@@ -248,7 +247,7 @@ impl SpriteQueue {
 
 #[derive(Debug)]
 pub struct SpriteRenderer {
-    projection_matrix: Matrix4<f32>,
+    projection_matrix: glm::Mat4,
     shader: glium::Program,
     vertex_buffer: glium::VertexBuffer<VertexData>,
     index_buffer: glium::IndexBuffer<u16>,
@@ -257,7 +256,7 @@ pub struct SpriteRenderer {
 
 impl SpriteRenderer {
     // TODO: Create a builder for SpriteRenderer.
-    pub fn new<F: glium::backend::Facade>(display: &F, projection: Matrix4<f32>) -> Self {
+    pub fn new<F: glium::backend::Facade>(display: &F, projection: glm::Mat4) -> Self {
         // TODO: Shaders output linear colors, not sRGB...
         // NOTE: By default, assume shaders output sRGB colors.
         let program_creation_input = glium::program::ProgramCreationInput::SourceCode {
@@ -277,7 +276,7 @@ impl SpriteRenderer {
     }
 
     pub fn with_shader<F: glium::backend::Facade>(display: &F, shader: glium::Program,
-                                                  projection: Matrix4<f32>) -> Self {
+                                                  projection: glm::Mat4) -> Self {
         // TODO: Evaluate other types of buffers.
         let vertex_buffer = glium::VertexBuffer::empty_dynamic(
             display,
@@ -327,7 +326,7 @@ impl SpriteRenderer {
 
         let uniforms = uniform! {
             image: sampler,
-            projectionView: cgmath::conv::array4x4(self.projection_matrix),
+            projectionView: *self.projection_matrix.as_ref(),
         };
 
         let blend = if draw_params.alpha_blending {
@@ -347,11 +346,11 @@ impl SpriteRenderer {
             .expect("Failed to draw sprites.");
     }
 
-    pub fn set_projection_matrix(&mut self, projection: Matrix4<f32>) {
+    pub fn set_projection_matrix(&mut self, projection: glm::Mat4) {
         self.projection_matrix = projection;
     }
 
-    pub fn get_projection_matrix(&self) -> Matrix4<f32> {
+    pub fn get_projection_matrix(&self) -> glm::Mat4 {
         self.projection_matrix
     }
 }
@@ -360,11 +359,11 @@ impl SpriteRenderer {
 pub struct Sprite<'a> {
     texture_region: MaybeOwned<'a, TextureRegion>,
 
-    position: Vector2<f32>,
-    origin: Vector2<f32>,
+    position: glm::TVec2<f32>,
+    origin: glm::TVec2<f32>,
     rotation: f32,
-    scale: Vector2<f32>,
-    color: Vector4<f32>,
+    scale: glm::TVec2<f32>,
+    color: [f32; 4],
     flip_x: bool,
     flip_y: bool,
 }
@@ -386,32 +385,32 @@ impl<'a> Sprite<'a> {
         Sprite {
             texture_region: texture_region.into(),
 
-            position: cgmath::vec2(0.0, 0.0),
-            origin: cgmath::vec2(0.5, 0.5),
+            position: glm::vec2(0.0, 0.0),
+            origin: glm::vec2(0.5, 0.5),
             rotation: 0.0,
-            scale: cgmath::vec2(1.0, 1.0),
-            color: cgmath::vec4(1.0, 1.0, 1.0, 1.0),
+            scale: glm::vec2(1.0, 1.0),
+            color: [1.0, 1.0, 1.0, 1.0],
             flip_x: false,
             flip_y: false,
         }
     }
 
-    pub fn set_position(&mut self, position: Vector2<f32>) -> &mut Self {
-        self.position = position;
+    pub fn set_position(&mut self, x: f32, y: f32) -> &mut Self {
+        self.position = glm::vec2(x, y);
         self
     }
 
-    pub fn position(&self) -> Vector2<f32> {
-        self.position
+    pub fn position(&self) -> (f32, f32) {
+        (self.position.x, self.position.y)
     }
 
-    pub fn set_origin(&mut self, origin: Vector2<f32>) {
+    pub fn set_origin(&mut self, x: f32, y: f32) {
         // FIXME: Clamp each dimension between 0 and 1.
-        self.origin = origin;
+        self.origin = glm::vec2(x, y);
     }
 
-    pub fn origin(&self) -> Vector2<f32> {
-        self.origin
+    pub fn origin(&self) -> (f32, f32) {
+        (self.origin.x, self.origin.y)
     }
 
     pub fn set_rotation(&mut self, rotation: f32) {
@@ -422,16 +421,16 @@ impl<'a> Sprite<'a> {
         self.rotation
     }
 
-    pub fn set_scale(&mut self, scale: Vector2<f32>) {
-        self.scale = scale;
+    pub fn set_scale(&mut self, scale_x: f32, scale_y: f32) {
+        self.scale = glm::vec2(scale_x, scale_y);
     }
 
     pub fn set_uniform_scale(&mut self, scale: f32) {
-        self.scale = cgmath::vec2(scale, scale);
+        self.set_scale(scale, scale);
     }
 
-    pub fn scale(&self) -> Vector2<f32> {
-        self.scale
+    pub fn scale(&self) -> (f32, f32) {
+        (self.scale.x, self.scale.y)
     }
 
     //pub fn scaled_size(&self) -> Vector2<f32> {
@@ -454,35 +453,32 @@ impl<'a> Sprite<'a> {
         self.flip_y
     }
 
-    pub fn set_color(&mut self, color: Vector4<f32>) {
+    pub fn set_color(&mut self, color: [f32; 4]) {
         // FIXME: Either clamp between 0 and 1, or use u8. Probably use our own color struct.
         self.color = color;
     }
 
-    pub fn color(&self) -> Vector4<f32> {
+    pub fn color(&self) -> [f32; 4] {
         self.color
     }
 
     fn get_vertex_data(&self) -> [VertexData; 4] {
         // Compute model matrix.
         let model = {
-            let scaled_size = self.size().cast::<f32>().expect("Could not scale size").mul_element_wise(self.scale());
-            let origin = self.origin();
-            let pixel_origin = scaled_size.mul_element_wise(origin);
+            let size = self.size();
+            let scaled_size = glm::vec2(size.x as f32 * self.scale.x, size.y as f32 * self.scale.y);
+            let pixel_origin = glm::vec2(scaled_size.x * self.origin.x, scaled_size.y * self.origin.y);
             // Position the sprite at the origin.
-            let position = self.position().cast::<f32>().expect("Could not cast position to f32") - pixel_origin;
-            let translate = Matrix4::from_translation(position.extend(0.0));
+            let position = self.position - pixel_origin;
+            let translate = glm::translation2d(&position);
             // Also rotate around the origin.
-            let rotate = if self.rotation() != 0.0 {
-                let rotate_angle = cgmath::Deg(self.rotation());
-                let rotate_rotation = Matrix4::from_angle_z(rotate_angle);
-                Matrix4::from_translation(pixel_origin.extend(0.0)) *
-                    rotate_rotation *
-                    Matrix4::from_translation(-pixel_origin.extend(0.0))
+            let rotate = if self.rotation != 0.0 {
+                let rotation_matrix = glm::rotation2d(self.rotation.to_radians());
+                glm::translation2d(&pixel_origin) * rotation_matrix * glm::translation2d(&-pixel_origin)
             } else {
-                Matrix4::identity()
+                glm::identity()
             };
-            let scale = Matrix4::from_nonuniform_scale(scaled_size.x, scaled_size.y, 1.0);
+            let scale = glm::scaling2d(&scaled_size);
             translate * rotate * scale
         };
 
@@ -503,25 +499,23 @@ impl<'a> Sprite<'a> {
         };
 
         // Transform vertices with the model matrix.
-        // TODO: Have a const 4x4 matrix with the coordinates and simply multiply it with the
-        // model. Then take slices to put into vertex data.
-        let pos_top_left = model * cgmath::vec4(0.0, 1.0, 0.0, 1.0);
-        let pos_top_right = model * cgmath::vec4(1.0, 1.0, 0.0, 1.0);
-        let pos_bottom_left = model * cgmath::vec4(1.0, 0.0, 0.0, 1.0);
-        let pos_bottom_right = model * cgmath::vec4(0.0, 0.0, 0.0, 1.0);
+        let pos_top_left = model * glm::vec3(0.0, 1.0, 1.0);
+        let pos_top_right = model * glm::vec3(1.0, 1.0, 1.0);
+        let pos_bottom_left = model * glm::vec3(1.0, 0.0, 1.0);
+        let pos_bottom_right = model * glm::vec3(0.0, 0.0, 1.0);
 
         let pos_top_left = [pos_top_left.x, pos_top_left.y];
         let pos_top_right = [pos_top_right.x, pos_top_right.y];
         let pos_bottom_left = [pos_bottom_left.x, pos_bottom_left.y];
         let pos_bottom_right = [pos_bottom_right.x, pos_bottom_right.y];
 
-        let color = cgmath::conv::array4(self.color());
+        let color = self.color();
 
         [
-            VertexData { pos: pos_top_left, tex_coords: tex_top_left, color: color },
-            VertexData { pos: pos_top_right, tex_coords: tex_top_right, color: color },
-            VertexData { pos: pos_bottom_left, tex_coords: tex_bottom_right, color: color },
-            VertexData { pos: pos_bottom_right, tex_coords: tex_bottom_left, color: color },
+            VertexData { pos: pos_top_left, tex_coords: tex_top_left, color },
+            VertexData { pos: pos_top_right, tex_coords: tex_top_right, color },
+            VertexData { pos: pos_bottom_left, tex_coords: tex_bottom_right, color },
+            VertexData { pos: pos_bottom_right, tex_coords: tex_bottom_left, color },
         ]
     }
 }
@@ -539,7 +533,7 @@ pub trait DrawTexture {
 impl DrawTexture for TextureRegion {
     fn draw(&self, x: f32, y: f32) -> Sprite {
         let mut sprite = Sprite::from_texture_region(self);
-        sprite.set_position(cgmath::vec2(x, y));
+        sprite.set_position(x, y);
         sprite
     }
 }

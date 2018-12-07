@@ -1,5 +1,6 @@
 pub use glium::{Surface, Texture2d};
 use moving_average::MovingAverage;
+pub use sdl2::event::{Event, WindowEvent};
 
 pub use crate::app::App;
 pub use crate::config::MidgarAppConfig;
@@ -59,8 +60,12 @@ impl<T: App> MidgarApp<T> {
             // Respond to event updates
             for event in self.midgar.event_pump().poll_iter() {
                 use sdl2::event::Event::*;
-                use sdl2::event::WindowEvent;
+
+                // Allow the app to process the raw event.
+                self.app.event(&event, &mut self.midgar);
+
                 match event {
+                    // TODO: Allow apps to customize this behavior.
                     Quit { .. } => window_closed = true,
 
                     // Window events.
@@ -119,8 +124,6 @@ impl<T: App> MidgarApp<T> {
                 resized = None;
             }
 
-            // TODO: Process input events
-
             // Call app step func
             self.app.step(&mut self.midgar);
 
@@ -152,7 +155,8 @@ pub struct Midgar {
 
 impl Midgar {
     fn new(config: &MidgarAppConfig) -> Self {
-        let sdl_context = sdl2::init().unwrap();
+        let sdl_context = sdl2::init()
+            .expect("Could not initialize SDL2");
         let graphics = Graphics::new(config, &sdl_context);
         let input = Input::new(&sdl_context);
 
@@ -200,9 +204,10 @@ impl Midgar {
         self.should_exit
     }
 
-    fn event_pump(&self) -> sdl2::EventPump {
+    // TODO: This should not be public.
+    pub fn event_pump(&self) -> sdl2::EventPump {
         self.sdl_context.event_pump()
-            .unwrap()
+            .expect("Could ont get SDL2 event pump")
     }
 }
 

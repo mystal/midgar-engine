@@ -96,7 +96,8 @@ pub struct Input {
 impl Input {
     pub(crate) fn new(sdl_context: &sdl2::Sdl) -> Self {
         // Initialize controller subsystem.
-        let controller_subsystem = sdl_context.game_controller().unwrap();
+        let controller_subsystem = sdl_context.game_controller()
+            .expect("Could not initialize SDL2 controller subsystem");
 
         Input {
             held_keys: HashSet::new(),
@@ -182,8 +183,8 @@ impl Input {
 
     pub(crate) fn handle_controller_added(&mut self, joystick_id: u32) {
         // TODO: Check for duplicate entry?
-        let joystick_id = joystick_id;
-        let sdl_controller = self.controller_subsystem.open(joystick_id).unwrap();
+        let sdl_controller = self.controller_subsystem.open(joystick_id)
+            .expect(&format!("Could not open joystick {} as a controller", joystick_id));
         self.controllers.push(Controller::new(sdl_controller.instance_id(), sdl_controller));
     }
 

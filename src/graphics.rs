@@ -3,7 +3,10 @@ use std::path::Path;
 use glium;
 use glium_sdl2::{DisplayBuild, SDL2Facade};
 use image;
-use sdl2;
+use sdl2::{
+    self,
+    video::GLProfile,
+};
 
 use crate::config::MidgarAppConfig;
 
@@ -18,14 +21,14 @@ pub struct Graphics {
 }
 
 impl Graphics {
-    // FIXME: This shouldn't be accessible outside the crate.
-    pub fn new(config: &MidgarAppConfig, sdl_context: &sdl2::Sdl) -> Self {
-        let video_subsystem = sdl_context.video().unwrap();
+    pub(crate) fn new(config: &MidgarAppConfig, sdl_context: &sdl2::Sdl) -> Self {
+        let video_subsystem = sdl_context.video()
+            .expect("Could not init SDL2 video subsystem");
 
         // Set OpenGL version
         // TODO: Allow App to request OpenGL versions
         video_subsystem.gl_attr().set_context_version(3, 3);
-        video_subsystem.gl_attr().set_context_profile(sdl2::video::GLProfile::Core);
+        video_subsystem.gl_attr().set_context_profile(GLProfile::Core);
         // TODO: We should retrieve an sRGB compatible framebuffer.
         //video_subsystem.gl_attr().set_framebuffer_srgb_compatible(true);
         // NOTE: SDL2 uses double buffering by default.
@@ -37,7 +40,7 @@ impl Graphics {
         }
         let display = window_builder
             .build_glium()
-            .expect("Could not build glium window.");
+            .expect("Could not create glium SLD2 window");
 
         // Configure vsync
         let swap_interval = if config.vsync() { 1 } else { 0 };

@@ -1,5 +1,4 @@
-use glium::{self, Surface, uniform};
-use glm;
+use glium::{Surface, uniform};
 use lyon::tessellation as tess;
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs.glsl");

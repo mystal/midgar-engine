@@ -1,6 +1,3 @@
-extern crate midgar;
-extern crate nalgebra_glm as glm;
-
 use midgar::{
     App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode,
     graphics::shape::{DrawMode, ShapeRenderer},

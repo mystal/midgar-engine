@@ -1,6 +1,3 @@
-extern crate midgar;
-extern crate nalgebra_glm as glm;
-
 use std::rc::Rc;
 
 use midgar::{App, Midgar, MidgarApp, MidgarAppConfig, Surface, KeyCode};
@@ -64,7 +61,7 @@ impl<'a> App for GameApp<'a> {
         let dt = midgar.time().delta_time() as f32;
 
         // TODO: Rotate the sprites.
-        let rotate_speed = 45.0;
+        let _rotate_speed = 45.0;
         //let old_rotation = self.sprite.rotation();
         //self.sprite.set_rotation(old_rotation + rotate_speed * dt);
 
@@ -79,7 +76,8 @@ impl<'a> App for GameApp<'a> {
         if self.batch {
             let mut batch = self.renderer.begin_batch(draw_params, &mut target);
             for sprite in &self.sprites {
-                batch.draw(sprite);
+                batch.draw(sprite)
+                    .unwrap();
             }
             batch.finish()
                 .unwrap();

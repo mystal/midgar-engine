@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
-use glium::{self, Surface, Texture2d, uniform};
+use glium::{Surface, Texture2d, uniform};
 use glium::vertex::EmptyVertexAttributes;
-use glm;
 pub use glyph_brush::{
     rusttype::Scale,
     FontId, Section, VariedSection,
@@ -38,7 +37,7 @@ pub struct TextRenderer<'font> {
 impl<'font> TextRenderer<'font> {
     pub fn new<F: glium::backend::Facade>(display: &F) -> Self {
         // TODO: Store the DPI from SDL2?
-        let dpi_factor = 1;
+        let _dpi_factor = 1;
 
         // TODO: Make glyph brush configurable.
         let glyph_brush = GlyphBrushBuilder::using_font_bytes(DEFAULT_FONT_BYTES)

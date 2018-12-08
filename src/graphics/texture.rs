@@ -1,9 +1,6 @@
 use std::borrow::Borrow;
 use std::rc::Rc;
 
-use glium;
-use glm;
-
 #[derive(Clone)]
 pub struct TextureRegion {
     texture: Rc<glium::Texture2d>,

@@ -1,4 +1,4 @@
-use Midgar;
+use crate::Midgar;
 
 pub trait App {
     fn new(midgar: &Midgar) -> Self;

@@ -5,7 +5,7 @@ use glium_sdl2::{DisplayBuild, SDL2Facade};
 use image;
 use sdl2;
 
-use config::MidgarAppConfig;
+use crate::config::MidgarAppConfig;
 
 pub mod animation;
 pub mod shape;

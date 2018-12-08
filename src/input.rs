@@ -198,7 +198,7 @@ impl Input {
         }
     }
 
-    pub(crate) fn handle_controller_remapped(&mut self, instance_id: i32) {
+    pub(crate) fn handle_controller_remapped(&mut self, _instance_id: i32) {
         // TODO: Implement
     }
 

@@ -1,19 +1,9 @@
-extern crate glium;
-extern crate glium_sdl2;
-extern crate glyph_brush;
-extern crate image;
-extern crate lyon;
-extern crate maybe_owned;
-extern crate moving_average;
-extern crate nalgebra_glm as glm;
-extern crate sdl2;
-
 pub use glium::{Surface, Texture2d};
 use moving_average::MovingAverage;
 
-pub use app::App;
-pub use config::MidgarAppConfig;
-pub use input::{Axis, Button, Input, KeyCode, MouseButton};
+pub use crate::app::App;
+pub use crate::config::MidgarAppConfig;
+pub use crate::input::{Axis, Button, Input, KeyCode, MouseButton};
 
 use std::time::{
     Duration,
@@ -21,9 +11,9 @@ use std::time::{
 };
 use std::thread;
 
-use graphics::Graphics;
-use input::ElementState;
-use time::Time;
+use crate::graphics::Graphics;
+use crate::input::ElementState;
+use crate::time::Time;
 
 mod app;
 mod config;

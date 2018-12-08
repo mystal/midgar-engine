@@ -2,15 +2,16 @@
 name = "midgar"
 version = "0.1.0"
 authors = ["Gabriel Martinez <reitaka@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 glium = { version = "0.22", features = [], default-features = false }
 glium_sdl2 = { git = "https://github.com/mystal/glium-sdl2", branch = "dev" }
+glm = { version = "0.2", package = "nalgebra-glm" }
 glyph_brush = "0.2"
 image = "0.20"
 lyon = "0.11"
 maybe-owned = "0.3"
 moving-average = { git = "https://github.com/mystal/moving-average" }
 nalgebra = "0.16"
-nalgebra-glm = "0.2"
 sdl2 = "0.31"

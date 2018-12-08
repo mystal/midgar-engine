@@ -2,13 +2,12 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 use std::thread;
 
-use glium::{self, DrawError, GlObject, Surface, uniform};
+use glium::{DrawError, GlObject, Surface, uniform};
 use glium::uniforms::{Sampler, SamplerBehavior};
 pub use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter, SamplerWrapFunction};
-use glm;
 use maybe_owned::MaybeOwned;
 
-use graphics::texture::{TextureRegion, TextureRegionHolder};
+use crate::graphics::texture::{TextureRegion, TextureRegionHolder};
 
 
 const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs.glsl");

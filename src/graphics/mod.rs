@@ -13,7 +13,6 @@ pub mod sprite;
 pub mod text;
 pub mod texture;
 
-
 pub struct Graphics {
     display: SDL2Facade,
 }
@@ -44,8 +43,8 @@ impl Graphics {
             .build_glium()
             .unwrap();
 
-        Graphics {
-            display: display,
+        Self {
+            display,
         }
     }
 

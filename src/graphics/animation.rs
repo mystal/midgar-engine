@@ -29,8 +29,8 @@ impl Animation {
             return None;
         }
 
-        Some(Animation {
-            frame_duration: frame_duration,
+        Some(Self {
+            frame_duration,
             animation_duration: frame_duration * key_frames.len() as f32,
             key_frames: key_frames.to_vec(),
             play_mode: PlayMode::Normal,

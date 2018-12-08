@@ -8,10 +8,10 @@ pub use glyph_brush::{
 };
 use glyph_brush::{BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder};
 
-const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/text.vs.glsl");
-const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/text.fs.glsl");
+const VERTEX_SHADER_SRC: &str = include_str!("shaders/text.vs.glsl");
+const FRAGMENT_SHADER_SRC: &str = include_str!("shaders/text.fs.glsl");
 
-const DEFAULT_FONT_BYTES: &'static [u8] = include_bytes!("../../assets/VeraMono.ttf");
+const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../../assets/VeraMono.ttf");
 
 #[derive(Clone, Copy, Debug)]
 struct GlyphVertex {

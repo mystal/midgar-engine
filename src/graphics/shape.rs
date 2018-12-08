@@ -1,9 +1,10 @@
 use glium::{Surface, uniform};
 use lyon::tessellation as tess;
 
-const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/shape.vs.glsl");
-const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/shape.fs.glsl");
+const VERTEX_SHADER_SRC: &str = include_str!("shaders/shape.vs.glsl");
+const FRAGMENT_SHADER_SRC: &str = include_str!("shaders/shape.fs.glsl");
 
+#[derive(Clone, Copy, Debug)]
 pub enum DrawMode {
     Fill,
     Line(f32),

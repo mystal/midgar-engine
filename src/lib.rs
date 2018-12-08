@@ -156,11 +156,11 @@ impl Midgar {
         let graphics = Graphics::new(config, &sdl_context);
         let input = Input::new(&sdl_context);
 
-        Midgar {
-            sdl_context: sdl_context,
+        Self {
+            sdl_context,
             time: Time::new(),
-            graphics: graphics,
-            input: input,
+            graphics,
+            input,
 
             frame_times: MovingAverage::new(200),
             delta_times: MovingAverage::new(200),

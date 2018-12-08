@@ -12,7 +12,7 @@ pub struct Time {
 impl Time {
     // FIXME: This shouldn't be accessible outside the crate.
     pub fn new() -> Self {
-        Time {
+        Self {
             delta_time: Duration::from_secs(0),
             last_frame_time: Instant::now(),
         }

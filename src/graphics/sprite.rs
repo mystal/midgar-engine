@@ -9,9 +9,8 @@ use maybe_owned::MaybeOwned;
 
 use crate::graphics::texture::{TextureRegion, TextureRegionHolder};
 
-
-const VERTEX_SHADER_SRC: &'static str = include_str!("shaders/sprite.vs.glsl");
-const FRAGMENT_SHADER_SRC: &'static str = include_str!("shaders/sprite.fs.glsl");
+const VERTEX_SHADER_SRC: &str = include_str!("shaders/sprite.vs.glsl");
+const FRAGMENT_SHADER_SRC: &str = include_str!("shaders/sprite.fs.glsl");
 
 const QUAD_VERTEX_SIZE: usize = 4;
 const QUAD_INDEX_SIZE: usize = 6;
@@ -79,9 +78,9 @@ impl<'a, 'b, S> SpriteBatch<'a, 'b, S>
         renderer.sprite_queue.clear();
 
         SpriteBatch {
-            renderer: renderer,
-            target: target,
-            draw_params: draw_params,
+            renderer,
+            target,
+            draw_params,
             draw_calls: 0,
             finished: false,
         }
@@ -118,7 +117,7 @@ impl<'a, 'b, S> SpriteBatch<'a, 'b, S>
                 Default::default()
             };
             glium::DrawParameters {
-                blend: blend,
+                blend,
                 .. Default::default()
             }
         };
@@ -297,11 +296,11 @@ impl SpriteRenderer {
             &indices,
         ).expect("Could not create SpriteRenderer index buffer.");
 
-        SpriteRenderer {
+        Self {
             projection_matrix: projection,
-            shader: shader,
-            vertex_buffer: vertex_buffer,
-            index_buffer: index_buffer,
+            shader,
+            vertex_buffer,
+            index_buffer,
             sprite_queue: SpriteQueue::new(),
         }
     }
@@ -334,7 +333,7 @@ impl SpriteRenderer {
             Default::default()
         };
         let params = glium::DrawParameters {
-            blend: blend,
+            blend,
             .. Default::default()
         };
 

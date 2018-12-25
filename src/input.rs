@@ -4,7 +4,7 @@ use std::fmt;
 use sdl2;
 pub use sdl2::controller::{Axis, Button, GameController};
 pub use sdl2::keyboard::Keycode as KeyCode;
-pub use sdl2::mouse::MouseButton;
+pub use sdl2::mouse::{MouseButton, MouseWheelDirection};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ElementState {

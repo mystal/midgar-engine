@@ -4,7 +4,7 @@ pub use sdl2::event::{Event, WindowEvent};
 
 pub use crate::app::App;
 pub use crate::config::MidgarAppConfig;
-pub use crate::input::{Axis, Button, Input, KeyCode, MouseButton};
+pub use crate::input::{Axis, Button, Input, KeyCode, MouseButton, MouseWheelDirection};
 
 use std::time::{
     Duration,

@@ -5,7 +5,7 @@ authors = ["Gabriel Martinez <reitaka@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-glium = { version = "0.22", features = [], default-features = false }
+glium = { version = "0.23", features = [], default-features = false }
 glium_sdl2 = { git = "https://github.com/mystal/glium-sdl2", branch = "dev" }
 glm = { version = "0.3", package = "nalgebra-glm" }
 glyph_brush = "0.4"
@@ -14,4 +14,4 @@ lyon_tessellation = "0.13"
 maybe-owned = "0.3"
 moving-average = { git = "https://github.com/mystal/moving-average" }
 nalgebra = "0.17"
-sdl2 = "0.31"
+sdl2 = "0.32"

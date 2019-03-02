@@ -30,10 +30,6 @@ impl Graphics {
         //video_subsystem.gl_attr().set_framebuffer_srgb_compatible(true);
         // NOTE: SDL2 uses double buffering by default.
 
-        // Configure vsync
-        let swap_interval = if config.vsync() { 1 } else { 0 };
-        video_subsystem.gl_set_swap_interval(swap_interval);
-
         let screen_size = config.screen_size();
         let mut window_builder = video_subsystem.window(config.title(), screen_size.0, screen_size.1);
         if config.resizable() {
@@ -41,7 +37,12 @@ impl Graphics {
         }
         let display = window_builder
             .build_glium()
-            .unwrap();
+            .expect("Could not build glium window.");
+
+        // Configure vsync
+        let swap_interval = if config.vsync() { 1 } else { 0 };
+        video_subsystem.gl_set_swap_interval(swap_interval)
+            .expect("Could not set OpenGL swap interval.");
 
         Self {
             display,

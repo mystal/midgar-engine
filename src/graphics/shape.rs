@@ -1,5 +1,5 @@
 use glium::{Surface, uniform};
-use lyon::tessellation as tess;
+use lyon_tessellation as tess;
 
 const VERTEX_SHADER_SRC: &str = include_str!("shaders/shape.vs.glsl");
 const FRAGMENT_SHADER_SRC: &str = include_str!("shaders/shape.fs.glsl");
@@ -126,7 +126,7 @@ impl ShapeRenderer {
                     &tess::math::rect(x, y, width, height),
                     &options,
                     &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
-                );
+                ).expect("Could not create a filled rectangle.");
             }
             DrawMode::Line(line_width) => {
                 let options = tess::StrokeOptions::default()
@@ -135,7 +135,7 @@ impl ShapeRenderer {
                     &tess::math::rect(x, y, width, height),
                     &options,
                     &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
-                );
+                ).expect("Could not create a stroked rectangle.");
             }
         }
     }
@@ -151,7 +151,7 @@ impl ShapeRenderer {
                     radius,
                     &options,
                     &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
-                );
+                ).expect("Could not create a filled circle.");
             }
             DrawMode::Line(line_width) => {
                 let options = tess::StrokeOptions::default()
@@ -161,7 +161,7 @@ impl ShapeRenderer {
                     radius,
                     &options,
                     &mut tess::BuffersBuilder::new(&mut self.vertices, vertex_ctor),
-                );
+                ).expect("Could not create a stroked circle.");
             }
         }
     }

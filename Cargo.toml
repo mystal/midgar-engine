@@ -8,7 +8,7 @@ edition = "2018"
 glium = { version = "0.22", features = [], default-features = false }
 glium_sdl2 = { git = "https://github.com/mystal/glium-sdl2", branch = "dev" }
 glm = { version = "0.3", package = "nalgebra-glm" }
-glyph_brush = "0.2"
+glyph_brush = "0.4"
 image = "0.21"
 lyon = "0.11"
 maybe-owned = "0.3"

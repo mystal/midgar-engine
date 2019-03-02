@@ -30,7 +30,7 @@ glium::implement_vertex!(GlyphVertex, left_top, right_bottom, tex_left_top, tex_
 pub struct TextRenderer<'font> {
     shader: glium::Program,
     vertex_buffer: Option<glium::VertexBuffer<GlyphVertex>>,
-    glyph_brush: GlyphBrush<'font>,
+    glyph_brush: GlyphBrush<'font, GlyphVertex>,
     glyph_cache_tex: Texture2d,
 }
 

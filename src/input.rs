@@ -1,10 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
-use sdl2;
 pub use sdl2::controller::{Axis, Button, GameController};
-pub use sdl2::keyboard::Keycode as KeyCode;
-pub use sdl2::mouse::{MouseButton, MouseWheelDirection};
+pub use sdl2::keyboard::{KeyboardState, Keycode as KeyCode};
+pub use sdl2::mouse::{MouseButton, MouseState, MouseWheelDirection};
 
 #[derive(Clone, Copy, Debug)]
 pub enum ElementState {
@@ -79,6 +78,8 @@ impl Controller {
 
 // Implement a useful structure that holds current input state.
 pub struct Input {
+    pub(crate) event_pump: sdl2::EventPump,
+
     held_keys: HashSet<KeyCode>,
     pressed_keys: HashSet<KeyCode>,
     released_keys: HashSet<KeyCode>,
@@ -95,11 +96,15 @@ pub struct Input {
 
 impl Input {
     pub(crate) fn new(sdl_context: &sdl2::Sdl) -> Self {
+        let event_pump = sdl_context.event_pump()
+            .expect("Could ont get SDL2 event pump");
         // Initialize controller subsystem.
         let controller_subsystem = sdl_context.game_controller()
             .expect("Could not initialize SDL2 controller subsystem");
 
         Input {
+            event_pump,
+
             held_keys: HashSet::new(),
             pressed_keys: HashSet::new(),
             released_keys: HashSet::new(),
@@ -114,6 +119,14 @@ impl Input {
             controllers: Vec::new(),
             controller_subsystem,
         }
+    }
+
+    pub fn mouse_state(&self) -> MouseState {
+        self.event_pump.mouse_state()
+    }
+
+    pub fn keyboard_state(&self) -> KeyboardState {
+        self.event_pump.keyboard_state()
     }
 
     pub fn is_key_held(&self, keycode: KeyCode) -> bool {

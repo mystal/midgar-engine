@@ -4,7 +4,9 @@ pub use sdl2::event::{Event, WindowEvent};
 
 pub use crate::app::App;
 pub use crate::config::MidgarAppConfig;
-pub use crate::input::{Axis, Button, Input, KeyCode, MouseButton, MouseWheelDirection};
+pub use crate::input::{
+    Axis, Button, Input, KeyboardState, KeyCode, MouseButton, MouseState, MouseWheelDirection,
+};
 
 use std::time::{
     Duration,
@@ -58,7 +60,7 @@ impl<T: App> MidgarApp<T> {
             self.midgar.input.begin_frame();
 
             // Respond to event updates
-            for event in self.midgar.event_pump().poll_iter() {
+            while let Some(event) = self.midgar.input.event_pump.poll_event() {
                 use sdl2::event::Event::*;
 
                 // Allow the app to process the raw event.
@@ -202,12 +204,6 @@ impl Midgar {
 
     pub fn should_exit(&self) -> bool {
         self.should_exit
-    }
-
-    // TODO: This should not be public.
-    pub fn event_pump(&self) -> sdl2::EventPump {
-        self.sdl_context.event_pump()
-            .expect("Could ont get SDL2 event pump")
     }
 }
 

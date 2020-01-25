@@ -13,7 +13,7 @@ pub enum ElementState {
 }
 
 pub struct Controller {
-    instance_id: i32,
+    instance_id: u32,
     sdl_controller: GameController,
     axis_positions: HashMap<Axis, i16>,
     held_buttons: HashSet<Button>,
@@ -34,7 +34,7 @@ impl fmt::Debug for Controller {
 }
 
 impl Controller {
-    fn new(instance_id: i32, sdl_controller: GameController) -> Self {
+    fn new(instance_id: u32, sdl_controller: GameController) -> Self {
         Controller {
             instance_id,
             sdl_controller,
@@ -184,10 +184,10 @@ impl Input {
         // TODO: Check for duplicate entry?
         let joystick_id = joystick_id;
         let sdl_controller = self.controller_subsystem.open(joystick_id).unwrap();
-        self.controllers.push(Controller::new(sdl_controller.instance_id(), sdl_controller));
+        self.controllers.push(Controller::new(sdl_controller.instance_id() as u32, sdl_controller));
     }
 
-    pub(crate) fn handle_controller_removed(&mut self, instance_id: i32) {
+    pub(crate) fn handle_controller_removed(&mut self, instance_id: u32) {
         let index = self.controllers.iter().enumerate()
             .find(|&(_, controller)| controller.instance_id == instance_id)
             .map(|(i, _)| i);
@@ -198,11 +198,11 @@ impl Input {
         }
     }
 
-    pub(crate) fn handle_controller_remapped(&mut self, _instance_id: i32) {
+    pub(crate) fn handle_controller_remapped(&mut self, _instance_id: u32) {
         // TODO: Implement
     }
 
-    pub(crate) fn handle_controller_axis(&mut self, instance_id: i32, axis: Axis, value: i16) {
+    pub(crate) fn handle_controller_axis(&mut self, instance_id: u32, axis: Axis, value: i16) {
         let controller = self.controllers.iter_mut()
             .find(|controller| controller.instance_id == instance_id);
         if let Some(controller) = controller {
@@ -212,7 +212,7 @@ impl Input {
         }
     }
 
-    pub(crate) fn handle_controller_button(&mut self, instance_id: i32, state: ElementState, button: Button) {
+    pub(crate) fn handle_controller_button(&mut self, instance_id: u32, state: ElementState, button: Button) {
         let controller = self.controllers.iter_mut()
             .find(|controller| controller.instance_id == instance_id);
         if let Some(controller) = controller {

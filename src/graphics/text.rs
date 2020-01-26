@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::ops::Deref;
 
 use glium::{Surface, Texture2d, uniform};
 use glium::vertex::EmptyVertexAttributes;
@@ -87,10 +88,12 @@ impl<'font> TextRenderer<'font> {
 
     pub fn draw_queued<F, S>(&mut self, display: &F, target: &mut S)
     where
-        F: glium::backend::Facade,
+        F: glium::backend::Facade + Deref<Target = glium::backend::Context>,
         S: Surface,
     {
-        self.draw_queued_with_transform(&glm::identity(), display, target);
+        let (screen_width, screen_height) = display.get_framebuffer_dimensions();
+        let transform = glm::ortho(0.0, screen_width as f32, screen_height as f32, 0.0, -1.0, 1.0);
+        self.draw_queued_with_transform(&transform, display, target);
     }
 
     pub fn draw_queued_with_transform<F, S>(&mut self, transform: &glm::Mat4, display: &F, target: &mut S)
@@ -104,7 +107,6 @@ impl<'font> TextRenderer<'font> {
                 let glyph_cache_tex = &mut self.glyph_cache_tex;
 
                 glyph_brush.process_queued(
-                    target.get_dimensions(),
                     |rect, tex_data| {
                         glyph_cache_tex.write(glium::Rect {
                             left: rect.min.x,
@@ -177,33 +179,17 @@ fn to_vertex(
         mut tex_coords,
         pixel_coords,
         bounds,
-        screen_dimensions: (screen_w, screen_h),
         color,
         z,
     }: glyph_brush::GlyphVertex,
 ) -> GlyphVertex {
     use glyph_brush::rusttype::{Rect, point};
 
-    let gl_bounds = Rect {
-        min: point(
-            2.0 * (bounds.min.x / screen_w - 0.5),
-            2.0 * (0.5 - bounds.min.y / screen_h),
-        ),
-        max: point(
-            2.0 * (bounds.max.x / screen_w - 0.5),
-            2.0 * (0.5 - bounds.max.y / screen_h),
-        ),
-    };
+    let gl_bounds = bounds;
 
     let mut gl_rect = Rect {
-        min: point(
-            2.0 * (pixel_coords.min.x as f32 / screen_w - 0.5),
-            2.0 * (0.5 - pixel_coords.min.y as f32 / screen_h),
-        ),
-        max: point(
-            2.0 * (pixel_coords.max.x as f32 / screen_w - 0.5),
-            2.0 * (0.5 - pixel_coords.max.y as f32 / screen_h),
-        ),
+        min: point(pixel_coords.min.x as f32, pixel_coords.min.y as f32),
+        max: point(pixel_coords.max.x as f32, pixel_coords.max.y as f32),
     };
 
     // handle overlapping bounds, modify uv_rect to preserve texture aspect
@@ -217,14 +203,12 @@ fn to_vertex(
         gl_rect.min.x = gl_bounds.min.x;
         tex_coords.min.x = tex_coords.max.x - tex_coords.width() * gl_rect.width() / old_width;
     }
-    // note: y access is flipped gl compared with screen,
-    // texture is not flipped (ie is a headache)
-    if gl_rect.max.y < gl_bounds.max.y {
+    if gl_rect.max.y > gl_bounds.max.y {
         let old_height = gl_rect.height();
         gl_rect.max.y = gl_bounds.max.y;
         tex_coords.max.y = tex_coords.min.y + tex_coords.height() * gl_rect.height() / old_height;
     }
-    if gl_rect.min.y > gl_bounds.min.y {
+    if gl_rect.min.y < gl_bounds.min.y {
         let old_height = gl_rect.height();
         gl_rect.min.y = gl_bounds.min.y;
         tex_coords.min.y = tex_coords.max.y - tex_coords.height() * gl_rect.height() / old_height;

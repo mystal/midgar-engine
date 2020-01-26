@@ -45,17 +45,14 @@ impl VertexConstructor {
             transformation_matrix,
         }
     }
-}
 
-impl tess::VertexConstructor<tess::FillVertex, VertexData> for VertexConstructor {
-    fn new_vertex(&mut self, vertex: tess::FillVertex) -> VertexData {
+    fn vertex_data(&self, position: tess::math::Point) -> VertexData {
         let (x, y) = if let Some(trans) = self.transformation_matrix {
-            let rotated_vert = trans * glm::vec3(vertex.position.x, vertex.position.y, 1.0);
+            let rotated_vert = trans * glm::vec3(position.x, position.y, 1.0);
             (rotated_vert.x, rotated_vert.y)
         } else {
-            (vertex.position.x, vertex.position.y)
+            (position.x, position.y)
         };
-        // FillVertex also provides normals but we don't need it here.
         VertexData {
             pos: [x, y],
             color: self.color,
@@ -63,19 +60,21 @@ impl tess::VertexConstructor<tess::FillVertex, VertexData> for VertexConstructor
     }
 }
 
-impl tess::VertexConstructor<tess::StrokeVertex, VertexData> for VertexConstructor {
-    fn new_vertex(&mut self, vertex: tess::StrokeVertex) -> VertexData {
-        let (x, y) = if let Some(trans) = self.transformation_matrix {
-            let rotated_vert = trans * glm::vec3(vertex.position.x, vertex.position.y, 1.0);
-            (rotated_vert.x, rotated_vert.y)
-        } else {
-            (vertex.position.x, vertex.position.y)
-        };
-        // FillVertex also provides normals but we don't need it here.
-        VertexData {
-            pos: [x, y],
-            color: self.color,
-        }
+impl tess::FillVertexConstructor<VertexData> for VertexConstructor {
+    fn new_vertex(&mut self, position: tess::math::Point, _attributes: tess::FillAttributes) -> VertexData {
+        self.vertex_data(position)
+    }
+}
+
+impl tess::StrokeVertexConstructor<VertexData> for VertexConstructor {
+    fn new_vertex(&mut self, position: tess::math::Point, _attributes: tess::StrokeAttributes) -> VertexData {
+        self.vertex_data(position)
+    }
+}
+
+impl tess::BasicVertexConstructor<VertexData> for VertexConstructor {
+    fn new_vertex(&mut self, position: tess::math::Point) -> VertexData {
+        self.vertex_data(position)
     }
 }
 
